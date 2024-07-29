@@ -45,6 +45,12 @@
             - encryting and decrypting
             - UUID
 
+            MVC
+                - Model ( Object, Struct - go, model)
+                - View ( template, css, other )
+                - Controller ()
+
+        
 
 ## Chat Service
 
