@@ -1,0 +1,21 @@
+{
+    "service_name": "real-time-forum",
+
+    "http_server": {
+        "host": "localhost", 
+        "port": "8080",
+        "idle_time": "60",
+        "write_time": "30", 
+        "read_time": "30",
+        "max_header_mb": 20
+    }, 
+
+    "logger": {
+        "level": -4,
+        "source_key": true, 
+        "output": "stdout", 
+        "handler": "json"
+    } 
+
+    
+}
