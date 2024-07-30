@@ -70,7 +70,8 @@
     c. Message Format
 
         - Date of the message sent
-        - Username of the sender
+        - Username of the sender 
+        
 
     d. Real-time functionality
 
