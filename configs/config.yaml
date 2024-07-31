@@ -1,0 +1,33 @@
+service_name: real-time-forum # simple key: value type
+
+http_server: # object type
+  host: "localhost"
+  port: 8080
+  idle_time: 60
+  write_time: 30
+  read_time: 30
+  max_header_mb: 20  
+
+logger: 
+  level: -4
+  source_key: true
+  output: stdout
+  handler: json
+ 
+# login, password, 
+# slice, array, var 1
+#array: [1, 2, 3, 4]
+
+# array, slice: var 2
+#arr:
+ # - 1
+ # - 2
+ # - 3
+ # - 4
+
+# Вместо логического И я могу использовать "|" or ">" что бы было удобнее и не использовать тысячи &&
+# build: |
+#   go build -o my_app ./cmd/forum/main.go 
+#   ./my_app
+  
+  

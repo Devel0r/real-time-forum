@@ -1,4 +1,7 @@
-#.SILENT ## Отключает показ команд перед выполнением 
+.SILENT # Отключает показ команд перед выполнением 
+
+include .env
+export 
 
 .PHONY: fmt lint test race run install_deps # Если в каталоге присутствует файл с совпадающей целью makefile то make может подумать что цель уже выполнена и не станет её исполнять. .PHONY невелирует это
 # И заставляет в любом случае выполнится не взирая на дирректорию 
@@ -6,8 +9,8 @@
 fmt: 
 	go fmt ./... 
 
-lint: fmt
-	go vet ./...
+lint: fmt # -> AST code -> AST -> assembler -> bin
+	# go vet ./... && golanci-lint run -v --fast ./... 
 
 test: lint 
 	go test -v -cover ./...
