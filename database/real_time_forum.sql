@@ -11,21 +11,19 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL UNIQUE
 );
 
-CREATE TABLE IF NOT EXISTS sessions (
+CREATE TABLE IF NOT EXISTS session (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL REFERENCES users(id), 
     expired_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP 
 );
 
--- categories: id, title, created_at
 CREATE TABLE IF NOT EXISTS categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
     title VARCHAR(255) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- id, title, content (text), photo, created_at, updated_at, category - foraign key -> categories(id)
 CREATE TABLE IF NOT EXISTS posts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title VARCHAR(255) NOT NULL,
@@ -37,7 +35,6 @@ CREATE TABLE IF NOT EXISTS posts (
     user_id INTEGER NOT NULL REFERENCES users(id)
 );
 
--- id, content (text), user_id, post_id, created_at, updated_at
 CREATE TABLE IF NOT EXISTS comments (
     id INTEGER PRIMARY KEY AUTOINCREMENT, 
     content TEXT NOT NULL,
