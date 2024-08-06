@@ -1,4 +1,5 @@
 .env
 example
 TZ.md
-LoggerTheory.md
+loggerTheory.md
+databaseTheory.md
