@@ -101,4 +101,3 @@ func populateConfig(cfg *cstructs.Config) {
 	cfg.Logger.Output = defaultLoggerOutput
 	cfg.Logger.Handler = defaultLoggerHandler
 }
-

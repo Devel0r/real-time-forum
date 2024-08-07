@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log/slog"
 
 	"github.com/Pruel/real-time-forum/pkg/config"
@@ -34,5 +33,6 @@ func main() {
 
 	// TODO: App.Stop with error handling
 
-	fmt.Print("Hello world")
+	println("forum service")
+
 }

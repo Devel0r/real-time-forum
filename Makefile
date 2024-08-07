@@ -1,4 +1,4 @@
-.SILENT # Отключает показ команд перед выполнением 
+.SILENT: # Отключает показ команд перед выполнением 
 
 include .env
 export 
@@ -7,10 +7,10 @@ export
 # И заставляет в любом случае выполнится не взирая на дирректорию 
 
 fmt: 
-	go fmt ./... 
+	go fmt ./...
 
-lint: fmt # -> AST code -> AST -> assembler -> bin
-	# go vet ./... && golanci-lint run -v --fast ./... 
+lint: fmt # -> AST code -> AST -> assembler -> bin # && golanci-lint run -v --fast ./... 
+	# go vet ./... 
 
 test: lint 
 	go test -v -cover ./...

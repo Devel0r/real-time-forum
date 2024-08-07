@@ -27,7 +27,7 @@ func validateLoggerCfgParams(cfg *cstructs.Config) error {
 	debugLevel := -4
 	errorLevel := 8
 
-	if cfg.Logger.Level >= debugLevel || cfg.Logger.Level <= errorLevel {
+	if cfg.Logger.Level < debugLevel || cfg.Logger.Level > errorLevel {
 		return errors.New("error, logger level incorrect")
 	}
 	if cfg.Logger.Handler == "" {
@@ -43,7 +43,7 @@ func validateLoggerCfgParams(cfg *cstructs.Config) error {
 	if cfg.Logger.Output == "" {
 		return errors.New("error, output empty")
 	}
-	
+
 	return nil
 }
 
@@ -53,7 +53,7 @@ func validateHTTPServerCfgParams(cfg *cstructs.Config) error {
 	}
 
 	if cfg.HTTPServer.Port == "" {
-		return errors.New("error, port is empty")	
+		return errors.New("error, port is empty")
 	}
 	if cfg.HTTPServer.IdleTimeout <= 0 {
 		return errors.New("error, HTTP server idle timeout must be positive")
@@ -73,4 +73,3 @@ func validateHTTPServerCfgParams(cfg *cstructs.Config) error {
 
 	return nil
 }
-

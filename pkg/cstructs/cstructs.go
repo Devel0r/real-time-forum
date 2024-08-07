@@ -2,8 +2,6 @@ package cstructs
 
 import "time"
 
-
-
 type (
 	HTTPServer struct {
 		Host         string        `json:"host" yaml:"host"`
