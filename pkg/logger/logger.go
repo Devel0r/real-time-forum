@@ -20,5 +20,7 @@ func InitLogger(cfg *cstructs.Config) (logger *slog.Logger, err error) {
 		}).WithAttrs([]slog.Attr{
 			slog.String("service_name", cfg.ServiceName)}))
 
+	slog.SetDefault(logger)
+
 	return logger, nil
 }

@@ -18,9 +18,11 @@ type (
 		Handler   string `json:"handler" yaml:"handler"`
 	}
 
-	Config struct {
-		ServiceName string `json:"service_name" yaml:"service_name"`
-		HTTPServer  `json:"http_server" yaml:"http_server"`
-		Logger      `json:"logger" yaml:"logger"`
+	Config struct { // cfg.HTTPServer.Host
+		ServiceName      string `json:"service_name" yaml:"service_name"`
+		HTTPServer       `json:"http_server" yaml:"http_server"`
+		Logger           `json:"logger" yaml:"logger"`
+		DatabaseFilePath string `env:"DATABASE_FILE_PATH" env-required:"true"` //Env required - это тоже тэг структуру который требует наличие переменной, иначе будет ошибка
+		// Но что бы эта шутка работала нужно сторонний импорт пакета, или самому написать этот пакет.
 	}
 )
