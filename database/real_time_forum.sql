@@ -1,5 +1,7 @@
 BEGIN TRANSACTION; 
 
+-- fix(database/sql insts): change timestamp type on datetime, and current_timestamp on 'now"
+
 CREATE TABLE IF NOT EXISTS users ( 
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     login TEXT NOT NULL, 
@@ -11,17 +13,17 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL UNIQUE
 );
 
-CREATE TABLE IF NOT EXISTS session (
+CREATE TABLE IF NOT EXISTS sessions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL REFERENCES users(id), 
-    expired_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP 
+    expired_at DATETIME NOT NULL DEFAULT 'now',
+    created_at DATETIME NOT NULL DEFAULT 'now' 
 );
 
 CREATE TABLE IF NOT EXISTS categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
     title VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME NOT NULL DEFAULT 'now'
 );
 
 CREATE TABLE IF NOT EXISTS posts (
@@ -29,8 +31,8 @@ CREATE TABLE IF NOT EXISTS posts (
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL, 
     image TEXT, 
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, 
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME NOT NULL DEFAULT 'now', 
+    updated_at DATETIME NOT NULL DEFAULT 'now',
     category_id INTEGER NOT NULL REFERENCES categories(id),
     user_id INTEGER NOT NULL REFERENCES users(id)
 );
@@ -40,8 +42,8 @@ CREATE TABLE IF NOT EXISTS comments (
     content TEXT NOT NULL,
     user_id INTEGER NOT NULL REFERENCES users(id),
     post_id INTEGER NOT NULL REFERENCES posts(id), 
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, 
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME NOT NULL DEFAULT 'now', 
+    updated_at DATETIME NOT NULL DEFAULT 'now'
 );
 
 
