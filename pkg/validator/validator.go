@@ -2,6 +2,7 @@ package validator
 
 import (
 	"errors"
+	"regexp"
 
 	"github.com/Pruel/real-time-forum/pkg/cstructs"
 )
@@ -33,9 +34,6 @@ func validateLoggerCfgParams(cfg *cstructs.Config) error {
 	if cfg.Logger.Handler == "" {
 		return errors.New("error, logger handler is empty")
 	}
-
-	// slog.TextHandler -> "error, "10.10.2024 10:10:10 GT+0: some Daniil log"
-	// slog.JSONHandler -> "{ "error", 10.10.2024 10:10:10 GT+0: "some Daniil log"}
 
 	if cfg.Logger.SourceKey == false {
 		return errors.New("error, source key false")
@@ -72,4 +70,32 @@ func validateHTTPServerCfgParams(cfg *cstructs.Config) error {
 	}
 
 	return nil
+}
+
+
+	// regexp = `^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z0-9!@#$%^&*]{8,}$` for validating password
+	// email = 
+
+
+// ValidateEmail
+func ValidateEmail(email string) (valid bool) {
+	const emailRegexp = `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+	// Регулярные выражение - это мощный инструмент используемый для поиска, сопаставления, и валидации строк. Рег.выр юзаются для сложных проверок например проверка emai
+	regexp := regexp.MustCompile(emailRegexp)
+
+	if ok := regexp.MatchString(email); !ok {
+		return false
+	}
+	return true
+}
+
+func ValidatePassword(password string) (valid bool) {
+	const passwordRegexp = `^[a-zA-Z\d!@#$%^&*]{8,}$`
+
+	regexp := regexp.MustCompile(passwordRegexp)
+
+	if ok := regexp.MatchString(password); !ok {
+		return false
+	}
+	return true
 }

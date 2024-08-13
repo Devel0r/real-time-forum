@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -42,5 +43,8 @@ func GetTmpPath(tmpName string) (tmpPath string) {
 
 // Controller of the main page
 func (ctl *Controller) MainController(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("main page")
 
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Main page"))
 }

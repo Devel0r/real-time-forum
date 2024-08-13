@@ -2,7 +2,7 @@ service_name: real-time-forum # simple key: value type
 
 http_server: # object type
   host: "localhost"
-  port: 8080
+  port: 8081
   idle_time: 60
   write_time: 30
   read_time: 30

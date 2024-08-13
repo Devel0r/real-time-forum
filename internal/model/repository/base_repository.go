@@ -4,7 +4,7 @@ import "github.com/Pruel/real-time-forum/pkg/sqlite"
 
 // MainRepository
 type Repository struct {
-    AuthRepo *AuthRepository
+	AuthRepo *AuthRepository
 }
 
 // New

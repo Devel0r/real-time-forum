@@ -25,10 +25,11 @@ func New(db *sqlite.Database) *Router {
 func (r *Router) InitRouter() {
 
 	// statics
+	r.Mux.HandleFunc("GET /", r.Ctl.MainController)
 
 	// auth routes, sign-up, sign-in, sign-out
 	r.Mux.HandleFunc("GET /sign-up", r.Ctl.AuthController.SignUpPage)
-	r.Mux.HandleFunc("POST /sign-up", r.Ctl.AuthController.SignUpPage)
+	r.Mux.HandleFunc("POST /sign-up", r.Ctl.AuthController.SignUp)
 	r.Mux.HandleFunc("/sign-in", r.Ctl.MainController)
 	r.Mux.HandleFunc("/sign-out", r.Ctl.MainController)
 
