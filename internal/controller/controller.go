@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"log/slog"
 	"net/http"
 	"os"
 
@@ -33,9 +32,9 @@ func GetWd() (wd string) {
 func GetTmpPath(tmpName string) (tmpPath string) {
 	switch tmpName {
 	case "signUp", "sign_up", "signUp.html":
-		tmpPath = GetWd() + "internal/view/template/sign_up.html"
+		tmpPath = GetWd() + "/internal/view/template/sign_up.html"
 	case "signIn", "sign_in", "signIn.html":
-		tmpPath = GetWd() + "internal/view/template/sign_in.html"
+		tmpPath = GetWd() + "/internal/view/template/sign_in.html"
 	}
 
 	return tmpPath
@@ -43,8 +42,6 @@ func GetTmpPath(tmpName string) (tmpPath string) {
 
 // Controller of the main page
 func (ctl *Controller) MainController(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("main page")
-
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Main page"))
 }

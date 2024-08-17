@@ -27,7 +27,6 @@ func NewAuthRepository(db *sqlite.Database) *AuthRepository {
 // SignOut
 // remove session
 
-
 // GetUserByUsername
 func (a *AuthRepository) GetUserByUsername(username string) (*model.User, error) {
 	if username == "" {

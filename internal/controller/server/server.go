@@ -4,7 +4,9 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/Pruel/real-time-forum/internal/controller/router"
 	"github.com/Pruel/real-time-forum/pkg/cstructs"
 	"github.com/Pruel/real-time-forum/pkg/serror"
 )
@@ -17,19 +19,21 @@ type Server struct {
 	// wsServer for example
 }
 
-func New(cfg *cstructs.Config) (*Server, error) {
+func New(cfg *cstructs.Config, handler *router.Router) (*Server, error) {
 	if cfg == nil {
 		return nil, serror.ErrNilConfigStruct
 	}
 
 	Addr := strings.Join([]string{cfg.HTTPServer.Host, cfg.HTTPServer.Port}, ":")
+
 	return &Server{
 		httpServer: &http.Server{
 			Addr:           Addr,
-			IdleTimeout:    cfg.HTTPServer.IdleTimeout,
-			WriteTimeout:   cfg.HTTPServer.WriteTimeout,
-			ReadTimeout:    cfg.HTTPServer.ReadTimeout,
-			MaxHeaderBytes: cfg.HTTPServer.MaxHeaderMB,
+			IdleTimeout:    cfg.HTTPServer.IdleTimeout * time.Second,
+			WriteTimeout:   cfg.HTTPServer.WriteTimeout * time.Second,
+			ReadTimeout:    cfg.HTTPServer.ReadTimeout * time.Second,
+			MaxHeaderBytes: cfg.HTTPServer.MaxHeaderMB << 20,
+			Handler:        handler.Mux,
 		},
 	}, nil
 }

@@ -2,7 +2,6 @@ package controller
 
 import (
 	"database/sql"
-	"errors"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -24,23 +23,20 @@ func NewAuthController(db *sqlite.Database) *AuthController {
 	}
 }
 
-// SignUpPage, GET
-func (actl *AuthController) SignUpPage(w http.ResponseWriter, r *http.Request) {
+// SignUp
+func (actl *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 	tmp := template.Must(template.ParseFiles(GetTmpPath("signUp")))
 
 	// TODO: status ok in the header response
-	w.WriteHeader(http.StatusOK)
+	if r.Method == http.MethodGet {
+		w.WriteHeader(http.StatusOK)
 
-	// TODO: execute template
-	if err := tmp.Execute(w, http.StatusOK); err != nil {
-		slog.Error(err.Error())
-		return
+		// TODO: execute template
+		if err := tmp.Execute(w, nil); err != nil {
+			slog.Error(err.Error())
+			return
+		}
 	}
-}
-
-// SignUp, POST
-func (actl *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
-	// tmp := template.Must(template.ParseFiles(GetTmpPath("signUp")))
 
 	// TODO: prepate user instance, assign data
 
@@ -52,8 +48,7 @@ func (actl *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: set this session cookie
 
-	// TODO: redirect to mian page
-
+	// TODO: redirect to main page
 }
 
 // SignIn
@@ -61,7 +56,7 @@ func (actl *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 // SignOut
 
 // validateUserData return nil if all data is valid, else return special error
-func (actl * AuthController) validateUserData(r *http.Request) error {
+func (actl *AuthController) validateUserData(r *http.Request) error {
 	minAge := 3
 	maxAge := 110
 
@@ -82,7 +77,7 @@ func (actl * AuthController) validateUserData(r *http.Request) error {
 	}
 
 	if intAge < minAge && intAge > maxAge {
-		return serror.ErrIncorrectAge 
+		return serror.ErrIncorrectAge
 	}
 
 	if firstName == "" || lastName == "" || gender == "" {

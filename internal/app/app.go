@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/Pruel/real-time-forum/internal/controller"
 	"github.com/Pruel/real-time-forum/internal/controller/router"
 	"github.com/Pruel/real-time-forum/internal/controller/server"
 	"github.com/Pruel/real-time-forum/pkg/cstructs"
@@ -21,10 +22,12 @@ func Run(cfg *cstructs.Config) error {
 	}
 	slog.Debug("Successfuly connected to the SQLite3 database")
 
-	router.New(db).InitRouter()
+	ctl := controller.New(db)
+	router := router.New(ctl)
+	router.InitRouter()
 	slog.Debug("Sucessful initialized router and created controllers")
 
-	server, err := server.New(cfg)
+	server, err := server.New(cfg, router)
 	if err != nil {
 		return err
 	}

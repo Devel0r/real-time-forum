@@ -72,10 +72,8 @@ func validateHTTPServerCfgParams(cfg *cstructs.Config) error {
 	return nil
 }
 
-
-	// regexp = `^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z0-9!@#$%^&*]{8,}$` for validating password
-	// email = 
-
+// regexp = `^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z0-9!@#$%^&*]{8,}$` for validating password
+// email =
 
 // ValidateEmail
 func ValidateEmail(email string) (valid bool) {
