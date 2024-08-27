@@ -1,29 +1,25 @@
-BEGIN TRANSACTION; 
+BEGIN TRANSACTION;
 
--- fix(database/sql insts): change timestamp type on datetime, and current_timestamp on 'now"
---
---
---
-CREATE TABLE IF NOT EXISTS 'users' ( 
+CREATE TABLE users ( 
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     login TEXT NOT NULL, 
     age INTEGER NOT NULL, 
-    gender TEXT NOT NULL DEFAULT,
-    name TEXT NOT NULL DEFAULT,
-    surname TEXT NOT NULL DEFAULT, 
+    gender TEXT NOT NULL DEFAULT 'Male',
+    name TEXT NOT NULL,
+    surname TEXT NOT NULL, 
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id TEXT NOT NULL,
     user_id INTEGER NOT NULL REFERENCES users(id), 
-    expired_at DATETIME NOT NULL DEFAULT 'now',
+    expires_at DATETIME NOT NULL DEFAULT 'now',
     created_at DATETIME NOT NULL DEFAULT 'now' 
 );
 
 CREATE TABLE IF NOT EXISTS categories (
-    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     title VARCHAR(255) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT 'now'
 );
