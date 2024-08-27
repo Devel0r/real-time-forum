@@ -24,10 +24,11 @@ func New(ctl *controller.Controller) *Router {
 func (r *Router) InitRouter() {
 
 	// statics
-	r.Mux.HandleFunc("GET /", r.Ctl.MainController)
+	r.Mux.HandleFunc("GET /", r.Ctl.MainController) // template -> router -> controller -> model  -> repository -> database
 
 	// auth routes, sign-up, sign-in, sign-out
-	r.Mux.HandleFunc("GET /sign-up", r.Ctl.AuthController.SignUp)
+	r.Mux.HandleFunc("GET /sign-up", r.Ctl.AuthController.SignUpPage) // GET - SignUpPage
+	r.Mux.HandleFunc("POST /sign-up", r.Ctl.AuthController.SignUp)    // POST - SignUpPage
 	r.Mux.HandleFunc("GET /sign-in", r.Ctl.MainController)
 	r.Mux.HandleFunc("GET /sign-out", r.Ctl.MainController)
 

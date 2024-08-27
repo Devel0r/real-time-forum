@@ -1,14 +1,16 @@
 BEGIN TRANSACTION; 
 
 -- fix(database/sql insts): change timestamp type on datetime, and current_timestamp on 'now"
-
-CREATE TABLE IF NOT EXISTS users ( 
+--
+--
+--
+CREATE TABLE IF NOT EXISTS 'users' ( 
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     login TEXT NOT NULL, 
     age INTEGER NOT NULL, 
-    gender TEXT NOT NULL DEFAULT 'Helikopter',
-    name TEXT NOT NULL DEFAULT 'AMONG',
-    surname TEXT NOT NULL DEFAULT 'ASS', 
+    gender TEXT NOT NULL DEFAULT,
+    name TEXT NOT NULL DEFAULT,
+    surname TEXT NOT NULL DEFAULT, 
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL UNIQUE
 );

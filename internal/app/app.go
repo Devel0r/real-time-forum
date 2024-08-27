@@ -20,6 +20,11 @@ func Run(cfg *cstructs.Config) error {
 	if err != nil {
 		return err
 	}
+
+	if err := db.SQLite.Ping(); err != nil {
+		fmt.Println("AMONG ASS")
+	}
+
 	slog.Debug("Successfuly connected to the SQLite3 database")
 
 	ctl := controller.New(db)

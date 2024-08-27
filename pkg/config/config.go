@@ -83,6 +83,13 @@ func parseConfigFileAndSetConfigParams(filePath string, cfg *cstructs.Config) (*
 		}
 	}
 
+	// TODO: get database file path from env
+	dbFilePath, ok := os.LookupEnv("DATABASE_FILE_PATH")
+	if !ok {
+		return nil, serror.ErrEmptyEnv
+	}
+	cfg.DatabaseFilePath = dbFilePath
+
 	return cfg, nil
 }
 

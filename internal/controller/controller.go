@@ -35,6 +35,8 @@ func GetTmpPath(tmpName string) (tmpPath string) {
 		tmpPath = GetWd() + "/internal/view/template/sign_up.html"
 	case "signIn", "sign_in", "signIn.html":
 		tmpPath = GetWd() + "/internal/view/template/sign_in.html"
+	case "error":
+		tmpPath = GetWd() + "/internal/view/template/error.html"
 	}
 
 	return tmpPath
