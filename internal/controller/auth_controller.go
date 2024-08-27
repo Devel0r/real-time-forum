@@ -59,7 +59,7 @@ func (actl *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 	user.Email = r.FormValue("email")
 
 	pass := r.FormValue("password")
-	
+	// get from native string password hash password
 	hash, err := getPasswordHash(pass)
 	if err != nil {
 		slog.Warn(err.Error())
@@ -68,15 +68,30 @@ func (actl *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 	}
 	user.PasswordHash = hash
 
-	id, err := actl.ARepo.SaveUser(&user)
+	userID, err := actl.ARepo.SaveUser(&user)
 	if err != nil {
 		slog.Error(err.Error())
 		actl.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return
 	}
-	slog.Debug("user saved into database with ", "id", id)
+	slog.Debug("user saved into database with ", "id", userID)
 
-	cookie, err := createCookie(id)
+	cookie, err := createCookie(userID)
+	if err != nil {
+		slog.Error(err.Error())
+		actl.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+	}
+
+	// SaveCookie
+	session := &model.Session{
+		Id:        cookie.Value,
+		UserId:    userID,
+		ExpiredAt: cookie.Expires,
+		CreatedAt: time.Now(),
+	}
+	// Write custom err, и написать метод saveCookie
+	// Написанный метод вызовем тут и ебанём в него session
+	_, err = actl.ARepo.SaveCookie(session)
 	if err != nil {
 		slog.Error(err.Error())
 		actl.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
@@ -84,31 +99,22 @@ func (actl *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, cookie)
 
-	fmt.Println("Cookie: ", cookie)
-
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func (a *AuthController) SignIn(w http.Response, r *http.Request) {
+func (a *AuthController) SignIn(w http.ResponseWriter, r *http.Request) {
 	// Пользователь должен иметь возможность подключаться, используя либо ник, либо e-mail в сочетании с паролем.
-	
-}
-
-func (a *AuthController) SignOut(w http.Response, r http.Request) {
+	// loginEmail := r.FormValue("username_or_email")
+	// password := r.FormValue("password")
 
 }
 
-/*
-	POST https://game.org https/1.1
-	host: game.org
-	other headers
-	cookie: session_id:1eqweqweqweasdadsf + https + TLS
-	login: daniil
-	password: qwerty
-	
- */
+func (a *AuthController) SignOut(w http.ResponseWriter, r *http.Request) {
+
+}
+
 func createCookie(id int) (*http.Cookie, error) {
-	expiresTime := time.Now().Add(time.Hour * 4) // time.Duration, time.Time = 22:15:16 28.08.2024
+	expiresTime := time.Now().Add(time.Hour * 4)
 
 	uuid := uuid.DefaultGenerator
 	uuidV4, err := uuid.NewV4()
@@ -119,16 +125,16 @@ func createCookie(id int) (*http.Cookie, error) {
 	value := uuidV4.String()
 	value = fmt.Sprintf("%d:%s", id, value)
 
-	cookie := &http.Cookie {
-		Name: "sessionID",
-		Value: value, 
-		Expires: expiresTime,  
+	cookie := &http.Cookie{
+		Name:     "sessionID",
+		Value:    value,
+		Expires:  expiresTime,
 		HttpOnly: true,
-		Secure: false,
-	} 
+		Secure:   false,
+	}
 
 	return cookie, nil
-} 
+}
 
 func getPasswordHash(pass string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(pass), 10)
@@ -143,13 +149,13 @@ func (actl *AuthController) validateUserData(r *http.Request) error {
 	minAge := 3
 	maxAge := 110
 
-	username := r.FormValue("login")       
-	age := r.FormValue("age")              
-	gender := r.FormValue("gender")        
-	firstName := r.FormValue("first_name") 
-	lastName := r.FormValue("last_name")  
-	email := r.FormValue("email")          
-	password := r.FormValue("password")    
+	username := r.FormValue("login")
+	age := r.FormValue("age")
+	gender := r.FormValue("gender")
+	firstName := r.FormValue("first_name")
+	lastName := r.FormValue("last_name")
+	email := r.FormValue("email")
+	password := r.FormValue("password")
 
 	intAge, err := strconv.Atoi(age)
 	if err != nil {
