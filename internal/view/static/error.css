@@ -1,0 +1,53 @@
+html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: "Scope One", serif;
+    background-color: #000; 
+    color: #fff; 
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    display: flex;
+    justify-content: space-around; /* Разместить элементы равномерно */
+    align-items: center;
+    width: 80%; /* Ширина контейнера */
+    max-width: 1200px; /* Ограничиваем максимальную ширину */
+    white-space: normal; /* Переносим длинные строки текста */
+    overflow: hidden; /* Убираем прокрутку внутри контейнера */
+}
+
+.skeleton-image {
+    max-width: 50%; /* Ограничиваем размер изображения скелета */
+    max-height: 100%;
+}
+
+.error-message {
+    font-size: 2em;
+    text-align: right; /* Выравнивание текста по правому краю */
+    margin-right: 20px; /* Отступ справа */
+    max-width: 50%; /* Ограничиваем максимальную ширину текста */
+    word-wrap: break-word; /* Отступ справа */
+}
+
+.error-link {
+    font-size: 1.5em;
+    color: #ffffff;
+    text-decoration: none;
+    padding: 15px 50px;
+    border-radius: 25px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.5);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    border: 2px solid #fff;
+    margin-left: 20px; 
+}
+
+.error-link:hover {
+    background-color: #fff;
+    color: #000;
+}

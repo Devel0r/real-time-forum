@@ -7,6 +7,8 @@ import (
 	"github.com/Pruel/real-time-forum/pkg/sqlite"
 )
 
+var TmpPath string
+
 // Main Controller
 type Controller struct {
 	*AuthController

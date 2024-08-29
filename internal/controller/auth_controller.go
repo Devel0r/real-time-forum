@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Pruel/real-time-forum/internal/model"
@@ -27,16 +28,33 @@ func NewAuthController(db *sqlite.Database) *AuthController {
 	}
 }
 
-// SignUpPage
-func (actl *AuthController) SignUpPage(w http.ResponseWriter, r *http.Request) {
-	tmp := template.Must(template.ParseFiles(GetTmpPath("signUp")))
+func (actl *AuthController) ExecTmp(w http.ResponseWriter, r *http.Request) {
+	url := r.URL.Path
+
+	switch url {
+	case "/sign-up":
+		execTemplate(w, "signUp")
+	case "/sign-in":
+		execTemplate(w, "signIn")
+	default:
+		TmpPath = GetTmpPath("main")
+	}
+}
+
+func execTemplate(w http.ResponseWriter, tmpPath string) error {
+	tmp, err := template.ParseFiles(GetTmpPath(tmpPath))
+	if err != nil {
+		fmt.Println("Error, template: ", err)
+	}
 
 	w.WriteHeader(http.StatusOK)
 
 	if err := tmp.Execute(w, nil); err != nil {
 		slog.Error(err.Error())
-		return
+		return err
 	}
+
+	return nil
 }
 
 // SignUp
@@ -76,10 +94,11 @@ func (actl *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 	}
 	slog.Debug("user saved into database with ", "id", userID)
 
-	cookie, err := createCookie(userID)
+	cookie, err := createCookie()
 	if err != nil {
 		slog.Error(err.Error())
 		actl.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return
 	}
 
 	// SaveCookie
@@ -89,12 +108,12 @@ func (actl *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 		ExpiredAt: cookie.Expires,
 		CreatedAt: time.Now(),
 	}
-	// Write custom err, и написать метод saveCookie
-	// Написанный метод вызовем тут и ебанём в него session
+
 	_, err = actl.ARepo.SaveCookie(session)
 	if err != nil {
 		slog.Error(err.Error())
 		actl.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return
 	}
 
 	http.SetCookie(w, cookie)
@@ -103,17 +122,113 @@ func (actl *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *AuthController) SignIn(w http.ResponseWriter, r *http.Request) {
-	// Пользователь должен иметь возможность подключаться, используя либо ник, либо e-mail в сочетании с паролем.
-	// loginEmail := r.FormValue("username_or_email")
-	// password := r.FormValue("password")
+	// a user send request -> coockie
+	// ++++++++++++++++++++++++++++++++++++++++++++++++++
+	// coockie, err := r.Cookie("sessionID")
+	// if err != http.ErrNoCookie {
+	// 	slog.Error(err.Error())
+	// 	a.ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+	// 	return
+	// } // loading login page ---
 
+	// sessionID := coockie.Value // user session_id == database session_id
+
+	// TODO: get session_id from database, if we found the sesion with this session_id
+	// TODO: if ok, a) create a new sesion coockie, and b) set this new session coockie to http response
+	// TODO: redirect user to main page, with status code see other
+	// TODO: compare session_id value beetwin coockie and session_id, user_id from sessions table (database)
+	// ++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	// if coockie not exists
+	loginEmail := r.FormValue("username_or_email")
+	password := r.FormValue("password")
+
+	if err := ValidateDateForLogin(loginEmail, password); err != nil {
+		slog.Warn(err.Error())
+		http.Redirect(w, r, "/sign-in", http.StatusBadRequest)
+		return
+	}
+
+	if !a.isValidUser(w, loginEmail, password) {
+		slog.Warn("error, user try login with invalid password")
+		http.Redirect(w, r, "/sign-in", http.StatusBadRequest)
+		return
+	}
+
+	// create a new session
+	coockie, err := createCookie()
+	if err != nil {
+		slog.Warn(err.Error())
+		a.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return
+	}
+	http.SetCookie(w, coockie)
+
+	fmt.Println("User successful logined: ", coockie)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+
+}
+
+func (a *AuthController) isValidUser(w http.ResponseWriter, loginEmail string, password string) bool {
+	if password == "" || loginEmail == "" {
+		return false
+	}
+
+	var err error
+	user := &model.User{}
+	if sdata := strings.Split(loginEmail, "@"); len(sdata) == 2 {
+		// email
+		user, err = a.ARepo.GetUserByEmail(loginEmail, user)
+		if err != serror.ErrUserNotFound {
+			slog.Warn(err.Error())
+			a.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+			return false
+		}
+
+	} else { // TODO: fix unused var compiler error
+		user, err = a.ARepo.GetUserByUsername(loginEmail)
+		if err != serror.ErrEmptyEmail {
+			fmt.Println(err.Error())
+			slog.Warn(err.Error()) 
+			a.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+			return false
+		}
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+		return false
+	}
+
+	fmt.Println("User is valid: ", user)
+
+	return true // TODO: fix error
 }
 
 func (a *AuthController) SignOut(w http.ResponseWriter, r *http.Request) {
+	coockie, err := r.Cookie("sessionID")
+	if err != nil {
+		slog.Warn(err.Error())
+		a.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return
+	}
 
+	// removeSessionByUUID
+	// chcking error
+	id, err := a.ARepo.RemoveSessionByUUID(coockie.Value)
+	if err != nil {
+		slog.Warn(err.Error())
+		a.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return
+	}
+	slog.Debug("successful remove session with", "id", id)
+
+	coockie = &http.Cookie{}
+	http.SetCookie(w, coockie)
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func createCookie(id int) (*http.Cookie, error) {
+func createCookie() (*http.Cookie, error) {
 	expiresTime := time.Now().Add(time.Hour * 4)
 
 	uuid := uuid.DefaultGenerator
@@ -123,7 +238,7 @@ func createCookie(id int) (*http.Cookie, error) {
 	}
 
 	value := uuidV4.String()
-	value = fmt.Sprintf("%d:%s", id, value)
+	// value = fmt.Sprintf("%d:%s", id, value) // id:session_id
 
 	cookie := &http.Cookie{
 		Name:     "sessionID",
@@ -186,3 +301,21 @@ func (actl *AuthController) validateUserData(r *http.Request) error {
 
 	return nil
 }
+
+func ValidateDateForLogin(data, password string) error {
+	if data == "" || password == "" {
+		return serror.ErrEmptyFieldLogin
+	}
+
+	if sdata := strings.Split(data, "@"); len(sdata) == 2 {
+		if ok := validator.ValidateEmail(data); !ok {
+			return serror.ErrInvalidEmail
+		}
+	}
+
+	// prefixs <script>, sql script - sql injection
+
+	return nil
+}
+
+// Blume Filter

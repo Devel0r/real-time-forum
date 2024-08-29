@@ -12,7 +12,7 @@ CREATE TABLE users (
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
-    id TEXT NOT NULL,
+    id TEXT NOT NULL, 
     user_id INTEGER NOT NULL REFERENCES users(id), 
     expires_at DATETIME NOT NULL DEFAULT 'now',
     created_at DATETIME NOT NULL DEFAULT 'now' 

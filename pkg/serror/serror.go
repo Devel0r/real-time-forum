@@ -16,8 +16,14 @@ var (
 	ErrIncorrectAge          = errors.New("error, user enter incorrect age")
 	ErrIncorrectNameOrGender = errors.New("error, empty name or gender value")
 	ErrInvalidEmail          = errors.New("error, invalid email")
+	ErrEmptyEmail            = errors.New("error, empty email")
 	ErrInvalidPassword       = errors.New("error, invalid password")  // errors.Is // Проверяет на схожесть ошибки
 	ErrEmptyUsername         = errors.New("error, username is empty") // errors.As // Проверяет тип ошибки
+	ErrEmptyFieldLogin       = errors.New("error, empty login or password user")
+
+	// Save data
+	ErrEmptyUserData   = errors.New("error, user struct pointer is nill")
+	ErrEmptyCookieData = errors.New("error, session structur pointer is nill")
 )
 
 // type Some struct {} // errors.As

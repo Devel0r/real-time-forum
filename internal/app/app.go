@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -46,6 +47,8 @@ func Run(cfg *cstructs.Config) error {
 	}()
 
 	fmt.Printf("\nReal Time Forum started: http://%s:%s \n\tFor stoping press Ctrl + C\n", cfg.HTTPServer.Host, cfg.HTTPServer.Port)
+
+	// TODO: remove after, Client 
 
 	sigChan := make(chan os.Signal, 1)
 

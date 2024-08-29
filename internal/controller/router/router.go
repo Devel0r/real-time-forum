@@ -27,9 +27,10 @@ func (r *Router) InitRouter() {
 	r.Mux.HandleFunc("GET /", r.Ctl.MainController) // template -> router -> controller -> model  -> repository -> database
 
 	// auth routes, sign-up, sign-in, sign-out
-	r.Mux.HandleFunc("GET /sign-up", r.Ctl.AuthController.SignUpPage) // GET - SignUpPage
-	r.Mux.HandleFunc("POST /sign-up", r.Ctl.AuthController.SignUp)    // POST - SignUpPage
-	r.Mux.HandleFunc("GET /sign-in", r.Ctl.MainController)
+	r.Mux.HandleFunc("GET /sign-up", r.Ctl.AuthController.ExecTmp) // GET - SignUpPage
+	r.Mux.HandleFunc("POST /sign-up", r.Ctl.AuthController.SignUp) // POST - SignUpPage
+	r.Mux.HandleFunc("GET /sign-in", r.Ctl.AuthController.ExecTmp)
+	r.Mux.HandleFunc("POST /sign-in", r.Ctl.AuthController.SignIn)
 	r.Mux.HandleFunc("GET /sign-out", r.Ctl.MainController)
 
 	// categories routes

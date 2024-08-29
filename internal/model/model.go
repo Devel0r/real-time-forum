@@ -16,7 +16,7 @@ type User struct {
 }
 
 type Session struct {
-	Id        int       `sql:"id"`
+	Id        string    `sql:"id"`
 	UserId    int       `sql:"user_id"`
 	ExpiredAt time.Time `sql:"expired_at"`
 	CreatedAt time.Time `sql:"created_at"`
