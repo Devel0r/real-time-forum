@@ -9,13 +9,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gofrs/uuid"
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/Pruel/real-time-forum/internal/model"
 	"github.com/Pruel/real-time-forum/internal/model/repository"
 	"github.com/Pruel/real-time-forum/pkg/serror"
 	"github.com/Pruel/real-time-forum/pkg/sqlite"
 	"github.com/Pruel/real-time-forum/pkg/validator"
-	"github.com/gofrs/uuid"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthController struct {
@@ -76,14 +77,15 @@ func (actl *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 	user.Surname = r.FormValue("last_name")
 	user.Email = r.FormValue("email")
 
-	pass := r.FormValue("password")
+	user.PasswordHash = r.FormValue("password")
 	// get from native string password hash password
-	hash, err := getPasswordHash(pass)
+	hash, err := getPasswordHash(user.PasswordHash)
 	if err != nil {
 		slog.Warn(err.Error())
 		actl.ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 		return
 	}
+	fmt.Printf("User saved: %+v\n", user)
 	user.PasswordHash = hash
 
 	userID, err := actl.ARepo.SaveUser(&user)
@@ -149,7 +151,7 @@ func (a *AuthController) SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !a.isValidUser(w, loginEmail, password) {
+	if !a.isValidUser(loginEmail, password) {
 		slog.Warn("error, user try login with invalid password")
 		http.Redirect(w, r, "/sign-in", http.StatusBadRequest)
 		return
@@ -164,12 +166,12 @@ func (a *AuthController) SignIn(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, coockie)
 
-	fmt.Println("User successful logined: ", coockie)
+	slog.Info("User successful logined", "coockie", coockie)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 
 }
 
-func (a *AuthController) isValidUser(w http.ResponseWriter, loginEmail string, password string) bool {
+func (a *AuthController) isValidUser(loginEmail string, password string) bool {
 	if password == "" || loginEmail == "" {
 		return false
 	}
@@ -178,20 +180,21 @@ func (a *AuthController) isValidUser(w http.ResponseWriter, loginEmail string, p
 	user := &model.User{}
 	if sdata := strings.Split(loginEmail, "@"); len(sdata) == 2 {
 		// email
-		user, err = a.ARepo.GetUserByEmail(loginEmail, user)
+		user, err = a.ARepo.GetUserByEmail(loginEmail)
 		if err != serror.ErrUserNotFound {
-			slog.Warn(err.Error())
-			a.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
-			return false
+			if err != nil {
+				slog.Warn(err.Error())
+				return false
+			}
 		}
 
-	} else { // TODO: fix unused var compiler error
+	} else {
 		user, err = a.ARepo.GetUserByUsername(loginEmail)
 		if err != serror.ErrEmptyEmail {
-			fmt.Println(err.Error())
-			slog.Warn(err.Error()) 
-			a.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
-			return false
+			if err != nil {
+				slog.Warn(err.Error())
+				return false
+			}
 		}
 	}
 
@@ -199,9 +202,7 @@ func (a *AuthController) isValidUser(w http.ResponseWriter, loginEmail string, p
 		return false
 	}
 
-	fmt.Println("User is valid: ", user)
-
-	return true // TODO: fix error
+	return true
 }
 
 func (a *AuthController) SignOut(w http.ResponseWriter, r *http.Request) {
