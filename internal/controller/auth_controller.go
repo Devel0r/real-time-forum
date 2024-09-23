@@ -121,25 +121,7 @@ func (actl *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func (a *AuthController) SignIn(w http.ResponseWriter, r *http.Request) {
-	// a user send request -> coockie
-	// ++++++++++++++++++++++++++++++++++++++++++++++++++
-	// coockie, err := r.Cookie("sessionID")
-	// if err != http.ErrNoCookie {
-	// 	slog.Error(err.Error())
-	// 	a.ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
-	// 	return
-	// } // loading login page ---
-
-	// sessionID := coockie.Value // user session_id == database session_id
-
-	// TODO: get session_id from database, if we found the sesion with this session_id
-	// TODO: if ok, a) create a new sesion coockie, and b) set this new session coockie to http response
-	// TODO: redirect user to main page, with status code see other
-	// TODO: compare session_id value beetwin coockie and session_id, user_id from sessions table (database)
-	// ++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-	// if coockie not exists
+func (a *AuthController) SignIn(w http.ResponseWriter, r *http.Request) {	
 	loginEmail := r.FormValue("username_or_email")
 	password := r.FormValue("password")
 
@@ -179,29 +161,45 @@ func (a *AuthController) isValidUser(w http.ResponseWriter, loginEmail string, p
 	if sdata := strings.Split(loginEmail, "@"); len(sdata) == 2 {
 		// email
 		user, err = a.ARepo.GetUserByEmail(loginEmail, user)
-		if err != serror.ErrUserNotFound {
+		if err != nil {
+			if err == serror.ErrUserNotFound {
+				// Пользователь не найден
+				slog.Warn("User not found")
+				return false
+			}
+			// Другие ошибки
 			slog.Warn(err.Error())
 			a.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 			return false
 		}
-
-	} else { // TODO: fix unused var compiler error
+	} else {
 		user, err = a.ARepo.GetUserByUsername(loginEmail)
-		if err != serror.ErrEmptyEmail {
-			fmt.Println(err.Error())
-			slog.Warn(err.Error()) 
+		if err != nil {
+			if err == serror.ErrUserNotFound {
+				// Пользователь не найден
+				slog.Warn("User not found")
+				return false
+			}
+			// Другие ошибки
+			slog.Warn(err.Error())
 			a.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 			return false
 		}
 	}
 
+	if user == nil {
+		// Дополнительная проверка на nil
+		slog.Warn("User is nil")
+		return false
+	}
+
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+		slog.Warn("Invalid password")
 		return false
 	}
 
 	fmt.Println("User is valid: ", user)
-
-	return true // TODO: fix error
+	return true
 }
 
 func (a *AuthController) SignOut(w http.ResponseWriter, r *http.Request) {
