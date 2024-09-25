@@ -1,9 +1,8 @@
 package router
 
 import (
-	"net/http"
-
 	"github.com/Pruel/real-time-forum/internal/controller"
+	"net/http"
 )
 
 type Router struct { // public, protected, private -> Router
@@ -24,15 +23,18 @@ func New(ctl *controller.Controller) *Router {
 func (r *Router) InitRouter() {
 
 	// statics
-	r.Mux.HandleFunc("GET /", r.Ctl.MainController) // template -> router -> controller -> model  -> repository -> database
+	// r.Mux.HandleFunc("GET /", r.Ctl.MainController) // template -> router -> controller -> model  -> repository -> database
 
 	// auth routes, sign-up, sign-in, sign-out
-	r.Mux.HandleFunc("GET /sign-up", r.Ctl.AuthController.ExecTmp) // GET - SignUpPage
-	r.Mux.HandleFunc("POST /sign-up", r.Ctl.AuthController.SignUp) // POST - SignUpPage
-	r.Mux.HandleFunc("GET /sign-in", r.Ctl.AuthController.ExecTmp)
-	r.Mux.HandleFunc("POST /sign-in", r.Ctl.AuthController.SignIn)
-	r.Mux.HandleFunc("GET /sign-out", r.Ctl.MainController)
+	r.Mux.HandleFunc("/api/signup", r.Ctl.AuthController.SignUp) // POST - SignUpPage
+	r.Mux.HandleFunc("/api/login", r.Ctl.AuthController.SignIn)
+	r.Mux.HandleFunc("/api/logout", r.Ctl.SignOut)
+	r.Mux.HandleFunc("/api/check-auth", r.Ctl.AuthController.CheckAuth)
 
+	fs := http.FileServer(http.Dir(r.Ctl.GetStaticPath())) // http.ServeFile - index.html or some.txt
+	r.Mux.Handle("/static/", http.StripPrefix("/static/", fs))
+
+	r.Mux.HandleFunc("/", r.Ctl.MainController)
 	// categories routes
 	// r.Mux.HandleFunc("GET /categories", r.Ctl.MainController)         // get all categories
 	// r.Mux.HandleFunc("GET /categories/{id}", r.Ctl.MainController)    // get a category by id

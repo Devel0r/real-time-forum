@@ -7,7 +7,7 @@ import (
 )
 
 func (a *AuthController) ErrorController(w http.ResponseWriter, statusCode int, Info string) {
-	tmpl := template.Must(template.ParseFiles(GetTmpPath("error")))
+	tmpl := template.Must(template.ParseFiles("/static/template/error.html"))
 
 	w.WriteHeader(statusCode)
 	if err := tmpl.Execute(w, Info); err != nil {
