@@ -7,10 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/Pruel/real-time-forum/pkg/cstructs"
 	"github.com/Pruel/real-time-forum/pkg/serror"
 	"github.com/Pruel/real-time-forum/pkg/validator"
-	"gopkg.in/yaml.v2"
 )
 
 // pkg -> pkg1 -> pkg2 dataM
