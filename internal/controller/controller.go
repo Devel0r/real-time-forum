@@ -2,8 +2,7 @@ package controller
 
 import (
 	"fmt"
-	"html/template"
-
+	// "html/template"
 	"log/slog"
 	"net/http"
 	"os"
@@ -35,27 +34,18 @@ func (ctl *Controller) GetStaticPath() string {
 func (ctl *Controller) MainController(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(r.URL.Path, "/api") || strings.HasPrefix(r.URL.Path, "/static") {
 		http.NotFound(w, r)
+		slog.Warn("Page not found")
 		return
 	}
 	// Путь к index.html
-	wd, err := os.Getwd()
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-	indexPath := filepath.Join(wd, "view", "template", "index.htm")
+	indexPath := filepath.Join("internal", "view", "template", "index.html")
 	fmt.Printf("\n\n Path to index.html: %s \n\n", indexPath)
 
-	file, err := os.Open(indexPath)
-	defer file.Close()
-	if err != nil {
-		fmt.Printf("\nnError: %s\n\n", err)
-	}
-	fmt.Println("file name: ", file.Name())
+	http.ServeFile(w, r, indexPath)
+	slog.Info("Successful serve the index page file")
 
-	tmp := template.Must(template.ParseFiles(indexPath))
-
-	if err := tmp.Execute(w, nil); err != nil {
-		slog.Error(err.Error())
-	}
+	// tmp := template.Must(template.ParseFiles(indexPath))
+	// if err := tmp.Execute(w, nil); err != nil {
+	// 	slog.Error(err.Error())
+	// }
 }
