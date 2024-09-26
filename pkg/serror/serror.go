@@ -24,6 +24,9 @@ var (
 	// Save data
 	ErrEmptyUserData   = errors.New("error, user struct pointer is nill")
 	ErrEmptyCookieData = errors.New("error, session structur pointer is nill")
+
+	// Session
+	ErrSessionNotFound = errors.New("error, session not found")
 )
 
 // type Some struct {} // errors.As

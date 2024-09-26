@@ -95,7 +95,22 @@ func (a *AuthRepository) SaveCookie(session *model.Session) (id int, err error) 
 	return int(ID), err
 }
 
-// Save cookie по факту тоже самое что сверху но только значение передаём другие, передаём поля sql.session
+func (a *AuthRepository) GetSessionByUUID(uuid string) (*model.Session, error) {
+	if uuid == "" {
+		return nil, errors.New("error, empty session id")
+	}
+	session := &model.Session{}
+	err := a.DB.SQLite.QueryRow("SELECT id, user_id, expires_at, created_at FROM sessions WHERE id=?", uuid).Scan(
+		&session.Id, &session.UserId, &session.CreatedAt, &session.ExpiredAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, serror.ErrSessionNotFound
+		}
+		return nil, err
+	}
+
+	return session, nil
+}
 
 // removeSessionByUUID
 func (a *AuthRepository) RemoveSessionByUUID(uuid string) (int, error) {

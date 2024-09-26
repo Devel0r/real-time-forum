@@ -22,6 +22,10 @@ type Session struct {
 	CreatedAt time.Time `sql:"created_at"`
 }
 
+func (s *Session) IsExpired() bool {
+	return s.ExpiredAt.Before(time.Now())
+}
+
 type Category struct {
 	Id        int       `sql:"id"`
 	Title     string    `sql:"title"`
