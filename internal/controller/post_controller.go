@@ -1,6 +1,11 @@
 package controller
 
+// request -> router -> controller -> repo -> db | feature up to down
+// implementatioin <- down -> up
+
 // post structure
+type Post struct {
+}
 
 // new contstructure
 
