@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/Pruel/real-time-forum/internal/model"
 	"github.com/Pruel/real-time-forum/pkg/serror"
@@ -35,6 +36,7 @@ func (a *AuthRepository) GetUserByUsername(username string) (*model.User, error)
 	}
 
 	user := model.User{}
+	fmt.Println("\n\nUser struct pointer: ", user)
 	if err := a.DB.SQLite.QueryRow("SELECT id, login, age, gender, name, surname, email, password_hash FROM users WHERE login=?", username).Scan(&user.Id,
 		&user.Login, &user.Age, &user.Gender, &user.Name, &user.Surname, &user.Email, &user.PasswordHash); err != nil {
 		if err == sql.ErrNoRows {
@@ -47,21 +49,20 @@ func (a *AuthRepository) GetUserByUsername(username string) (*model.User, error)
 }
 
 // GetUserByEmail
-func (a *AuthRepository) GetUserByEmail(email string) (*model.User, error) {
+func (a *AuthRepository) GetUserByEmail(email string, user *model.User) (*model.User, error) {
 	if email == "" {
 		return nil, serror.ErrEmptyEmail
 	}
 
-	user := model.User{}
-	if err := a.DB.SQLite.QueryRow("SELECT id, login, age, gender, name, surname, email, password_hash FROM users WHERE email=?", email).Scan(&user.Id,
-		&user.Login, &user.Age, &user.Gender, &user.Name, &user.Surname, &user.Email, &user.PasswordHash); err != nil {
+	if err := a.DB.SQLite.QueryRow("SELECT login, age, gender, name, surname, email, password_hash FROM users WHERE email=?", email).Scan(user.Login,
+		user.Age, user.Gender, user.Name, user.Surname, user.Email, user.PasswordHash); err != nil {
 		if err != sql.ErrNoRows {
 			return nil, serror.ErrUserNotFound
 		}
 		return nil, err
 	}
 
-	return &user, nil
+	return user, nil
 }
 
 // SaveUser

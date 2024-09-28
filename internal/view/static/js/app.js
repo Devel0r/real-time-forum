@@ -1,4 +1,3 @@
-// Получаем ссылки на элементы
 const loginForm = document.getElementById('login-form');
 const signupForm = document.getElementById('signup-form');
 const postsSection = document.getElementById('posts-section');

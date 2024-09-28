@@ -26,26 +26,28 @@ func New(db *sqlite.Database) *Controller {
 func (ctl *Controller) GetStaticPath() string {
 	wd, err := os.Getwd()
 	if err != nil {
-		return "./view/static"
+		return "./internal/view/static"
 	}
-	return filepath.Join(wd, "view", "static")
+	return filepath.Join(wd, "internal", "view", "static")
 }
 
 func (ctl *Controller) MainController(w http.ResponseWriter, r *http.Request) {
-	if strings.HasPrefix(r.URL.Path, "/api") || strings.HasPrefix(r.URL.Path, "/static") {
+	if strings.HasPrefix(r.URL.Path, "/api/") || strings.HasPrefix(r.URL.Path, "/static/") {
 		http.NotFound(w, r)
-		slog.Warn("Page not found")
+		slog.Warn("Page not found: " + r.URL.Path)
 		return
 	}
+
 	// Путь к index.html
-	indexPath := filepath.Join("internal", "view", "template", "index.html")
+	wd, err := os.Getwd()
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		slog.Error("Failed to get working directory: " + err.Error())
+		return
+	}
+	indexPath := filepath.Join(wd, "internal", "view", "template", "index.html")
 	fmt.Printf("\n\n Path to index.html: %s \n\n", indexPath)
 
 	http.ServeFile(w, r, indexPath)
-	slog.Info("Successful serve the index page file")
-
-	// tmp := template.Must(template.ParseFiles(indexPath))
-	// if err := tmp.Execute(w, nil); err != nil {
-	// 	slog.Error(err.Error())
-	// }
+	slog.Info("Successfully served index.html")
 }

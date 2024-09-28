@@ -182,7 +182,7 @@ func (actl *AuthController) isValidUser(w http.ResponseWriter, loginEmail string
 	user := &model.User{}
 	if sdata := strings.Split(loginEmail, "@"); len(sdata) == 2 {
 		// email
-		user, err = actl.ARepo.GetUserByEmail(loginEmail)
+		user, err = actl.ARepo.GetUserByEmail(loginEmail, user)
 		if err != nil {
 			if err == serror.ErrUserNotFound {
 				// Пользователь не найден
