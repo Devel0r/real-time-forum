@@ -35,10 +35,7 @@ func (ctl *Controller) MainController(w http.ResponseWriter, r *http.Request) {
 	tmp := template.Must(template.ParseFiles(GetTmpPath("index")))
 
 	// cookie = session - sessionUUID
-	cookie, _ := r.Cookie("sessionUID")
-	fmt.Println("Request coockie:", cookie)
-	userID, err := ctl.AuthController.ARepo.GetUserIDFromSession(r)
-	fmt.Println("UserID: ", userID)
+	userID, err := ctl.AuthController.ARepo.GetUserIDFromSession(w, r)
 	if err != nil {
 		slog.Warn(err.Error())
 		return

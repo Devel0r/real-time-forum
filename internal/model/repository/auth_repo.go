@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/Pruel/real-time-forum/internal/model"
@@ -143,19 +144,19 @@ func (a *AuthRepository) RemoveSessionByUUID(uuid string) (id int, err error) {
 	return int(ID), nil
 }
 
-func (a *AuthRepository) GetUserIDFromSession(r *http.Request) (int, error) {
+func (a *AuthRepository) GetUserIDFromSession(w http.ResponseWriter, r *http.Request) (int, error) {
 	cookie, err := r.Cookie("sessionID")
 	if err != nil {
-		return 0, err
+		if err == http.ErrNoCookie {
+			slog.Warn("Unauthorized user", "error", err.Error())
+			http.Redirect(w, r, "/sign-in", http.StatusForbidden)
+			return 0, err
+		}
 	}
 
 	sessionUUID := cookie.Value
-	fmt.Println("SessionID", sessionUUID)
-
 	user := model.User{}
-
-	err = a.DB.SQLite.QueryRow("SELECT user_id FROM sessions WHERE id=?", sessionUUID).Scan(&user.Id)
-	if err != nil {
+	if err = a.DB.SQLite.QueryRow("SELECT user_id FROM sessions WHERE id=?", sessionUUID).Scan(&user.Id); err != nil {
 		return 0, err
 	}
 

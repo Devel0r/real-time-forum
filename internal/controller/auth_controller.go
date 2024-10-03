@@ -8,13 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gofrs/uuid"
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/Pruel/real-time-forum/internal/model"
 	"github.com/Pruel/real-time-forum/internal/model/repository"
 	"github.com/Pruel/real-time-forum/pkg/serror"
 	"github.com/Pruel/real-time-forum/pkg/sqlite"
 	"github.com/Pruel/real-time-forum/pkg/validator"
-	"github.com/gofrs/uuid"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthController struct {
@@ -107,7 +108,6 @@ func (a *AuthController) SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("Email before method GetUserByUsername: %v \n\n", loginOrEmail)
 	userID, err := a.ARepo.GetUserIdByUsername(loginOrEmail)
 	if err != nil {
 		slog.Warn(err.Error())
@@ -137,7 +137,6 @@ func (a *AuthController) SignIn(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, cookie)
 
-	fmt.Printf("SING IN EMAIL HERE: %v \n\n", userID)
 	slog.Info("User successfully logged")
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 
@@ -162,7 +161,7 @@ func (a *AuthController) SignOut(w http.ResponseWriter, r *http.Request) {
 	coockie = &http.Cookie{}
 	http.SetCookie(w, coockie)
 
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, "/sign-in", http.StatusSeeOther)
 }
 
 func createCookie() (*http.Cookie, error) {
@@ -196,14 +195,12 @@ func (a *AuthController) isValidUser(w http.ResponseWriter, loginOrEmail string,
 	user := &model.User{}
 	if sdata := strings.Split(loginOrEmail, "@"); len(sdata) == 2 {
 		// email
-		fmt.Printf("EMAIL USER:%v\n\n\n ", user)
 		user, err = a.ARepo.GetUserByEmail(loginOrEmail, user)
 
 		if err != nil {
 			if err == serror.ErrUserNotFound {
 				// Пользователь не найден
 				slog.Warn("User not found")
-				fmt.Printf("EMAIL USER:%v ERROR HERE\n\n\n ", user)
 				return false
 			}
 			// Другие ошибки
