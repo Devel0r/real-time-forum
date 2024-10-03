@@ -13,7 +13,8 @@ logger:
   source_key: true
   output: stdout
   handler: json
- 
+
+# env: development
 # login, password, 
 # slice, array, var 1
 #array: [1, 2, 3, 4]

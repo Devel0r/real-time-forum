@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func (a *AuthController) ErrorController(w http.ResponseWriter, statusCode int, Info string) {
+func ErrorController(w http.ResponseWriter, statusCode int, Info string) {
 	tmpl := template.Must(template.ParseFiles(GetTmpPath("error")))
 
 	w.WriteHeader(statusCode)

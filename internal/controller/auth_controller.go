@@ -2,7 +2,6 @@ package controller
 
 import (
 	"fmt"
-	"html/template"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -28,41 +27,12 @@ func NewAuthController(db *sqlite.Database) *AuthController {
 	}
 }
 
-func (actl *AuthController) ExecTmp(w http.ResponseWriter, r *http.Request) {
-	url := r.URL.Path
-
-	switch url {
-	case "/sign-up":
-		execTemplate(w, "signUp")
-	case "/sign-in":
-		execTemplate(w, "signIn")
-	default:
-		TmpPath = GetTmpPath("main")
-	}
-}
-
-func execTemplate(w http.ResponseWriter, tmpPath string) error {
-	tmp, err := template.ParseFiles(GetTmpPath(tmpPath))
-	if err != nil {
-		fmt.Println("Error, template: ", err)
-	}
-
-	w.WriteHeader(http.StatusOK)
-
-	if err := tmp.Execute(w, nil); err != nil {
-		slog.Error(err.Error())
-		return err
-	}
-
-	return nil
-}
-
 // SignUp
 func (actl *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 
 	if err := actl.validateUserData(r); err != nil {
 		slog.Warn(err.Error())
-		actl.ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+		ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 		return
 	}
 
@@ -81,7 +51,7 @@ func (actl *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 	hash, err := getPasswordHash(pass)
 	if err != nil {
 		slog.Warn(err.Error())
-		actl.ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+		ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 		return
 	}
 	user.PasswordHash = hash
@@ -89,7 +59,7 @@ func (actl *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 	userID, err := actl.ARepo.SaveUser(&user)
 	if err != nil {
 		slog.Error(err.Error())
-		actl.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return
 	}
 	slog.Debug("user saved into database with ", "id", userID)
@@ -97,7 +67,7 @@ func (actl *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 	cookie, err := createCookie()
 	if err != nil {
 		slog.Error(err.Error())
-		actl.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return
 	}
 
@@ -112,7 +82,7 @@ func (actl *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 	_, err = actl.ARepo.SaveCookie(session)
 	if err != nil {
 		slog.Error(err.Error())
-		actl.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return
 	}
 
@@ -121,101 +91,70 @@ func (actl *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func (a *AuthController) SignIn(w http.ResponseWriter, r *http.Request) {	
-	loginEmail := r.FormValue("username_or_email")
+func (a *AuthController) SignIn(w http.ResponseWriter, r *http.Request) {
+	loginOrEmail := r.FormValue("username_or_email")
 	password := r.FormValue("password")
 
-	if err := ValidateDateForLogin(loginEmail, password); err != nil {
+	if err := ValidateDateForLogin(loginOrEmail, password); err != nil {
 		slog.Warn(err.Error())
 		http.Redirect(w, r, "/sign-in", http.StatusBadRequest)
 		return
 	}
 
-	if !a.isValidUser(w, loginEmail, password) {
-		slog.Warn("error, user try login with invalid password")
+	if !a.isValidUser(w, loginOrEmail, password) {
+		slog.Warn("error, user try login with invalid password\n")
 		http.Redirect(w, r, "/sign-in", http.StatusBadRequest)
 		return
 	}
 
-	// create a new session
-	coockie, err := createCookie()
+	fmt.Printf("Email before method GetUserByUsername: %v \n\n", loginOrEmail)
+	userID, err := a.ARepo.GetUserIdByUsername(loginOrEmail)
 	if err != nil {
 		slog.Warn(err.Error())
-		a.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		http.Redirect(w, r, "/sign-in", http.StatusBadRequest)
 		return
 	}
-	http.SetCookie(w, coockie)
 
-	fmt.Println("User successful logined: ", coockie)
+	cookie, err := createCookie()
+	if err != nil {
+		slog.Warn(err.Error())
+		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return
+	}
+
+	session := &model.Session{
+		Id:        cookie.Value,
+		UserId:    userID,
+		ExpiredAt: cookie.Expires,
+		CreatedAt: time.Now(),
+	}
+
+	_, err = a.ARepo.SaveCookie(session)
+	if err != nil {
+		slog.Warn(err.Error())
+		return
+	}
+
+	http.SetCookie(w, cookie)
+
+	fmt.Printf("SING IN EMAIL HERE: %v \n\n", userID)
+	slog.Info("User successfully logged")
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 
-}
-
-func (a *AuthController) isValidUser(w http.ResponseWriter, loginEmail string, password string) bool {
-	if password == "" || loginEmail == "" {
-		return false
-	}
-
-	var err error
-	user := &model.User{}
-	if sdata := strings.Split(loginEmail, "@"); len(sdata) == 2 {
-		// email
-		user, err = a.ARepo.GetUserByEmail(loginEmail, user)
-		if err != nil {
-			if err == serror.ErrUserNotFound {
-				// Пользователь не найден
-				slog.Warn("User not found")
-				return false
-			}
-			// Другие ошибки
-			slog.Warn(err.Error())
-			a.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
-			return false
-		}
-	} else {
-		user, err = a.ARepo.GetUserByUsername(loginEmail)
-		if err != nil {
-			if err == serror.ErrUserNotFound {
-				// Пользователь не найден
-				slog.Warn("User not found")
-				return false
-			}
-			// Другие ошибки
-			slog.Warn(err.Error())
-			a.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
-			return false
-		}
-	}
-
-	if user == nil {
-		// Дополнительная проверка на nil
-		slog.Warn("User is nil")
-		return false
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
-		slog.Warn("Invalid password")
-		return false
-	}
-
-	fmt.Println("User is valid: ", user)
-	return true
 }
 
 func (a *AuthController) SignOut(w http.ResponseWriter, r *http.Request) {
 	coockie, err := r.Cookie("sessionID")
 	if err != nil {
 		slog.Warn(err.Error())
-		a.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return
 	}
 
-	// removeSessionByUUID
-	// chcking error
 	id, err := a.ARepo.RemoveSessionByUUID(coockie.Value)
 	if err != nil {
 		slog.Warn(err.Error())
-		a.ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return
 	}
 	slog.Debug("successful remove session with", "id", id)
@@ -236,7 +175,6 @@ func createCookie() (*http.Cookie, error) {
 	}
 
 	value := uuidV4.String()
-	// value = fmt.Sprintf("%d:%s", id, value) // id:session_id
 
 	cookie := &http.Cookie{
 		Name:     "sessionID",
@@ -247,6 +185,60 @@ func createCookie() (*http.Cookie, error) {
 	}
 
 	return cookie, nil
+}
+
+func (a *AuthController) isValidUser(w http.ResponseWriter, loginOrEmail string, password string) bool {
+	if password == "" || loginOrEmail == "" {
+		return false
+	}
+
+	var err error
+	user := &model.User{}
+	if sdata := strings.Split(loginOrEmail, "@"); len(sdata) == 2 {
+		// email
+		fmt.Printf("EMAIL USER:%v\n\n\n ", user)
+		user, err = a.ARepo.GetUserByEmail(loginOrEmail, user)
+
+		if err != nil {
+			if err == serror.ErrUserNotFound {
+				// Пользователь не найден
+				slog.Warn("User not found")
+				fmt.Printf("EMAIL USER:%v ERROR HERE\n\n\n ", user)
+				return false
+			}
+			// Другие ошибки
+			slog.Warn(err.Error())
+			ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+			return false
+		}
+	} else {
+		user, err = a.ARepo.GetUserByUsername(loginOrEmail)
+		if err != nil {
+			if err == serror.ErrUserNotFound {
+				// Пользователь не найден
+				slog.Warn("User not found")
+				return false
+			}
+			// Другие ошибки
+			slog.Warn(err.Error())
+			ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+			return false
+		}
+	}
+
+	if user == nil {
+		// Дополнительная проверка на nil
+		slog.Warn("User is nil")
+		return false
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+		slog.Warn("Invalid password")
+		return false
+	}
+
+	fmt.Println("User is valid: ", user)
+	return true
 }
 
 func getPasswordHash(pass string) (string, error) {
@@ -311,9 +303,5 @@ func ValidateDateForLogin(data, password string) error {
 		}
 	}
 
-	// prefixs <script>, sql script - sql injection
-
 	return nil
 }
-
-// Blume Filter

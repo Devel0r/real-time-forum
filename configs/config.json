@@ -15,7 +15,9 @@
         "source_key": true, 
         "output": "stdout", 
         "handler": "json"
-    } 
+    },
+
+    "env": "development"
 
     
 }

@@ -1,10 +1,14 @@
 package repository
 
-import "github.com/Pruel/real-time-forum/pkg/sqlite"
+import (
+	"github.com/Pruel/real-time-forum/pkg/sqlite"
+)
 
 // MainRepository
 type Repository struct {
-	AuthRepo *AuthRepository
+	AuthRepo    *AuthRepository
+	PostRepo    *PostRepository
+	CommentRepo *CommentRepository
 }
 
 // New

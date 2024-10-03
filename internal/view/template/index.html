@@ -4,94 +4,97 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../static/sign_up.css">
-    <link rel="icon" type="image/svg+xml" href="../static/favicon/favicon16.svg">
-    <link rel="icon" type="image/png" href="../static/favicon/favicon16.png">
-    <link rel="icon" type="image/svg+xml" href="../static/favicon/favicon32.svg">
-    <link rel="icon" type="image/png" href="../static/favicon/favicon32.png">
-    <link rel="icon" type="image/svg+xml" href="../static/favicon/favicon96.svg">
-    <link rel="icon" type="image/png" href="../static/favicon/favicon96.png">
+    <link rel="stylesheet" type="text/css" href="/static/css/index.css">
+    <link rel="icon" type="image/png" href="/static/favicon/favicon16.png">
+    <link rel="icon" type="image/png" href="/static/favicon/favicon32.png">
+    <link rel="icon" type="image/png" href="/static/favicon/favicon96.png">
     <title>Real Time Forum</title>
 </head>
+<div class="container">
+     <!-- Header -->
+     <header class="header">
+        <!-- Левая часть: Логотип -->
+        <div class="logo">
+            <a href="/">
+                <img src="/static/img/logo.png" alt="Logo" class="logo-image">
+            </a>
+        </div>
+        <!-- Правая часть: Меню пользователя -->
+        <div class="user-menu">
+            <!-- Иконка для создания поста -->
+            <div class="create-post">
+                <a href="/create-posts">
+                    <img src="/static/img/create_post.png" alt="Create Post" class="icon-plus">
+                </a>
+            </div>
+            <!-- Профиль пользователя -->
+            <div class="profile">
+                <div class="profile-container">
+                    <div class="profile-icon">
+                        <img src="/static/img/profile.png" alt="User Avatar">
+                    </div>
+                    <span class="user-name">{{.Username}}</span> <!-- Имя пользователя будет динамическим -->
+                </div>
+                <!-- Выпадающее меню -->
+                <div class="dropdown-menu">
+                    <button class="dropdown-item" onclick="window.location.href='https://www.youtube.com/watch?v=obmlZH3X9gs'">Secret Button</button>
+                    <button class="dropdown-item" onclick="window.location.href='/sign-out'">Sign Out</button>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- Content -->
+    <div class="content">
+        <!-- Left Sidebar (Category Selector) -->
+        <aside class="sidebar">
+            <select class="category-selector">
+                <option value="" disabled selected>...select category</option>
+                <a href="/category/technology"><option value="tech">Technology</option></a>
+                <option value="science">Science</option>
+                <option value="business">Business</option>
+            </select>
+        </aside>
+
+        <!-- Posts Feed -->
+        <main class="feed">
+            <div class="post">
+                <div class="post-category">Tech</div>
+                <h2 class="post-title">Test123</h2>
+                <p class="post-content">12313</p>
+                <span class="post-comments">0 comments</span>
+            </div>
+            <!-- Add more posts here -->
+        </main>
+
+        <!-- Right Sidebar (Users Online) -->
+        <aside class="users-sidebar">
+            <div class="user">
+                <div class="user-avatar"></div>
+                <span class="user-name">test</span>
+                <span class="status-dot online"></span>
+            </div>
+            <!-- Add more users here -->
+        </aside>
+    </div>
+</div>
+
+<script>
+    function toggleDropdown() {
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        dropdownMenu.style.display = dropdownMenu.style.display === 'flex' ? 'none' : 'flex';
+    }
+
+    // Закрытие меню при клике вне его области
+    window.onclick = function(event) {
+        if (!event.target.matches('.profile') && !event.target.closest('.profile')) {
+            const dropdownMenu = document.getElementById('dropdown-menu');
+            if (dropdownMenu.style.display === 'flex') {
+                dropdownMenu.style.display = 'none';
+            }
+        }
+    }
+</script>
+
 <body>
-
-     <!-- Форма регистрации -->
-     <div id="registration-section" style="display: none;">
-        <div class="form-registration">
-            <h2>Sign up</h2>
-            <form action="#" method="post">
-    
-                <label for="login">User name</label>
-                <input type="text" id="login" name="login" required>
-    
-                <label for="age">Age</label>
-                <input type="number" id="Age" name="age" required>
-    
-                <label for="gender">Gender</label>
-                <select name="gender" id="gender">
-                    <option value="Male"> Male </option> 
-                    <option value="Female"> Female </option> 
-                    <option value="Helikopter"> Helikopter </option> 
-    
-                <label for="first_name">First name</label>
-                <input type="text" id="first_name" name="first_name" required>
-    
-                <label for="last_name">Last name</label>
-                <input type="text" id="last_name" name="last_name" required>
-    
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" required>
-    
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
-    
-                <button type="submit">Submit</button>
-            </form>
-            <p>If you already have an account, please <a href="/sign-in">Sign In</a></p>
-    </div>
-
-    <!-- Форма входа -->
-    <div id="login-section" style="display: none;">
-        <div class="form-login">
-            <h2>Sign In</h2>
-            <form action="#" method="post">
-    
-                <label for="username_or_email">Username or Email</label>
-                <input type="text" id="username_or_email" name="username_or_email" required>
-    
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
-    
-                <button type="submit">Sign In</button>
-            </form>
-        </div>
-        <p>Don't have an account? <a href="/sign-up">Sign Up</a></p>
-    </body>
-    </div>
-
-    <div id="app-section" style="display: none;"></div>
-        <!-- Навигация -->
-        <nav>
-            <button id="logout-btn">Выйти</button>
-            <!-- Другие элементы навигации -->
-        </nav>
-
-        <!-- Лента постов -->
-        <div id="posts-feed" style="display: none;">
-            <!-- Контент ленты постов -->
-        </div>
-
-        <!-- Детали поста и комментарии -->
-        <div id="post-detail" style="display: none;">
-            <!-- Контент выбранного поста и комментарии -->
-        </div>
-
-        <!-- Чат -->
-        <div id="chat-section" style="display: none;">
-            <!-- Контент чата -->
-        </div>
-    </div>
-    <script src="../static/js/app.js"></script>
-
 </body>
 </html>

@@ -30,6 +30,7 @@ const (
 	defaultLoggerSourceKey = true
 	defaultLoggerOutput    = "stdout"
 	defaultLoggerHandler   = "json"
+	// defaultEnv             = "development"
 )
 
 const (
@@ -107,4 +108,5 @@ func populateConfig(cfg *cstructs.Config) {
 	cfg.Logger.SourceKey = defaultLoggerSourceKey
 	cfg.Logger.Output = defaultLoggerOutput
 	cfg.Logger.Handler = defaultLoggerHandler
+	// cfg.Environment = defaultEnv
 }

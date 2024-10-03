@@ -1,0 +1,201 @@
+/* Общие стили */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #121212;
+    color: #f0f0f0;
+}
+
+/* Container */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #333;
+}
+
+/* Левая часть: Логотип */
+.logo {
+    display: flex;
+    align-items: center;
+}
+
+/* Правая часть: Меню пользователя */
+.user-menu {
+    display: flex;
+    align-items: center;
+}
+
+/* Иконка создания поста */
+.create-post {
+    margin-right: 20px;
+    cursor: pointer;
+}
+
+/* Профиль пользователя */
+.profile {
+    position: relative;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.profile-container {
+    display: flex;
+    align-items: center;
+    padding: 5px 10px; /* Добавляем немного отступов */
+    border: 1px solid #444; /* Рамка вокруг профиля */
+    border-radius: 5px; /* Скругляем углы */
+    background-color: #222; /* Фон рамки */
+}
+
+.user-name {
+    margin-left: 10px; /* Отступ между иконкой и именем */
+    color: #f0f0f0;
+}
+
+/* Выпадающее меню */
+.dropdown-menu {
+    position: absolute;
+    top: 60px; /* Отступ вниз для расположения под профилем */
+    right: 0;
+    background-color: #222;
+    padding: 10px;
+    border-radius: 8px;
+    display: none; /* Скрыто по умолчанию */
+    flex-direction: column;
+    z-index: 1;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.profile:hover .dropdown-menu {
+    display: flex; /* Показываем меню при наведении на профиль */
+}
+
+.dropdown-item {
+    background: none;
+    border: none;
+    color: #f0f0f0;
+    padding: 10px;
+    text-align: left;
+    cursor: pointer;
+    font-size: 16px;
+    width: 100%;
+    transition: background 0.3s;
+}
+
+.dropdown-item:hover {
+    background-color: #333;
+}
+
+/* Остальная часть вашего CSS для контента и боковых панелей остается прежней */
+
+/* Content */
+.content {
+    display: flex;
+    margin-top: 20px;
+}
+
+/* Sidebar (Category Selector) */
+.sidebar {
+    flex: 1;
+    padding: 20px;
+}
+
+.category-selector {
+    width: 100%;
+    padding: 10px;
+    background-color: #333;
+    border: 1px solid #444;
+    color: #f0f0f0;
+    border-radius: 5px;
+}
+
+/* Posts Feed */
+.feed {
+    flex: 3;
+    padding: 20px;
+}
+
+.post {
+    background-color: #222;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.post-category {
+    font-size: 12px;
+    color: #00FF7F;
+}
+
+.post-title {
+    font-size: 20px;
+    color: #f0f0f0;
+    margin: 10px 0;
+}
+
+.post-content {
+    font-size: 16px;
+    color: #b0b0b0;
+    margin-bottom: 10px;
+}
+
+.post-comments {
+    font-size: 14px;
+    color: #888;
+}
+
+/* Right Sidebar (Users Online) */
+.users-sidebar {
+    flex: 1;
+    padding: 20px;
+}
+
+.user {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background-color: #333;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.user-name {
+    flex: 1;
+    color: #f0f0f0;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-left: 10px;
+}
+
+.online {
+    background-color: #00FF7F;
+}
+
+.offline {
+    background-color: #888;
+}

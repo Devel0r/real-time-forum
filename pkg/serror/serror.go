@@ -4,6 +4,7 @@ import "errors"
 
 // sentinel or signal errors
 var (
+	// Config errors
 	ErrInvalidConfigPath = errors.New("error, invalid config path")
 	ErrFileNotExists     = errors.New("error, a file is not exists")
 
@@ -21,13 +22,14 @@ var (
 	ErrEmptyUsername         = errors.New("error, username is empty") // errors.As // Проверяет тип ошибки
 	ErrEmptyFieldLogin       = errors.New("error, empty login or password user")
 
-	// Save data
-	ErrEmptyUserData   = errors.New("error, user struct pointer is nill")
+	// Save data errors
+	ErrEmptyUserData   = errors.New("error, empty user data")
 	ErrEmptyCookieData = errors.New("error, session structur pointer is nill")
+
+	// Post errors
+	ErrEmptyPostData           = errors.New("error, empty post data")
+	ErrEmptyPostContentOrTitle = errors.New("error, empty post content or title")
+
+	// Comment errors
+	ErrEmptyCommentData = errors.New("error, empty comment data")
 )
-
-// type Some struct {} // errors.As
-// type Other struct {} // errors.As
-// type Another struct {} // errors.As
-
-// some := Some{} // errors.Is
