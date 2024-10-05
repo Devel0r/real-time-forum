@@ -34,21 +34,28 @@ func (ctl *Controller) MainController(w http.ResponseWriter, r *http.Request) {
 
 	tmp := template.Must(template.ParseFiles(GetTmpPath("index")))
 
-	// cookie = session - sessionUUID
+	// Getting user from session 
 	userID, err := ctl.AuthController.ARepo.GetUserIDFromSession(w, r)
 	if err != nil {
 		slog.Warn(err.Error())
 		return
 	}
-
+	// Getting user information 
 	name, err := ctl.AuthController.ARepo.GetUserNameByUserID(userID)
 	if err != nil {
 		slog.Warn(err.Error())
 		return
 	}
 
+	// TODO: Getting categories 
+
+	// TODO: Getting posts
+
+
 	data := TemplateData{
 		Username: name,
+		Categories: categories, 
+		Posts: posts, 
 	}
 
 	if err := tmp.Execute(w, data); err != nil {

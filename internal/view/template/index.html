@@ -10,62 +10,64 @@
     <link rel="icon" type="image/png" href="/static/favicon/favicon96.png">
     <title>Real Time Forum</title>
 </head>
+<body>
 <div class="container">
      <!-- Header -->
-     <header class="header">
-        <!-- Левая часть: Логотип -->
-        <div class="logo">
-            <a href="/">
-                <img src="/static/img/logo.png" alt="Logo" class="logo-image">
-            </a>
-        </div>
-        <!-- Правая часть: Меню пользователя -->
-        <div class="user-menu">
-            <!-- Иконка для создания поста -->
-            <div class="create-post">
-                <a href="/create-posts">
-                    <img src="/static/img/create_post.png" alt="Create Post" class="icon-plus">
+      <header class="header">
+            <!-- Левая часть: Логотип -->
+            <div class="logo">
+                <a href="/">
+                    <img src="/static/img/logo.png" alt="Logo" class="logo-image">
                 </a>
             </div>
-            <!-- Профиль пользователя -->
-            <div class="profile">
-                <div class="profile-container">
-                    <div class="profile-icon">
-                        <img src="/static/img/profile.png" alt="User Avatar">
-                    </div>
-                    <span class="user-name">{{.Username}}</span> <!-- Имя пользователя будет динамическим -->
+            <!-- Правая часть: Меню пользователя -->
+            <div class="user-menu">
+                <!-- Иконка для создания поста -->
+                <div class="create-post">
+                    <a href="/create-posts">
+                        <img src="/static/img/create_post.png" alt="Create Post" class="icon-plus">
+                    </a>
                 </div>
-                <!-- Выпадающее меню -->
-                <div class="dropdown-menu">
-                    <button class="dropdown-item" onclick="window.location.href='https://www.youtube.com/watch?v=obmlZH3X9gs'">Secret Button</button>
-                    <button class="dropdown-item" onclick="window.location.href='/sign-out'">Sign Out</button>
+                <!-- Профиль пользователя -->
+                <div class="profile">
+                    <div class="profile-container" onclick="toggleDropdown()">
+                        <div class="profile-icon">
+                            <img src="/static/img/profile.png" alt="User Avatar">
+                        </div>
+                        <span class="user-name">{{.Username}}</span>
+                    </div>
+                    <!-- Выпадающее меню -->
+                    <div class="dropdown-menu" id="dropdown-menu">
+                        <button class="dropdown-item" onclick="window.location.href='https://www.youtube.com/watch?v=obmlZH3X9gs'">Secret Button</button>
+                        <button class="dropdown-item" onclick="window.location.href='/sign-out'">Sign Out</button>
+                    </div>
                 </div>
             </div>
-        </div>
-    </header>
+        </header>
     <!-- Content -->
     <div class="content">
-        <!-- Left Sidebar (Category Selector) -->
-        <aside class="sidebar">
-            <select class="category-selector">
+         <!-- Left Sidebar (Category Selector) -->
+         <aside class="sidebar">
+            <select class="category-selector" onchange="location = this.value;">
                 <option value="" disabled selected>...select category</option>
-                <a href="/category/technology"><option value="tech">Technology</option></a>
-                <option value="science">Science</option>
-                <option value="business">Business</option>
+                {{ range .Categories }}
+                    <option value="/category/{{ .Id }}">{{ .Title }}</option>
+                {{ end }}
             </select>
         </aside>
 
-        <!-- Posts Feed -->
         <main class="feed">
-            <div class="post">
-                <div class="post-category">Tech</div>
-                <h2 class="post-title">Test123</h2>
-                <p class="post-content">12313</p>
-                <span class="post-comments">0 comments</span>
-            </div>
-            <!-- Add more posts here -->
+            {{ range .Posts }}
+                <div class="post">
+                    <div class="post-category">{{ .Category.Title }}</div>
+                    <h2 class="post-title">{{ .Title }}</h2>
+                    <p class="post-content">{{ .Content }}</p>
+                    <span class="post-comments">{{ len .Comments }} comments</span>
+                </div>
+            {{ else }}
+                <p>No posts available.</p>
+            {{ end }}
         </main>
-
         <!-- Right Sidebar (Users Online) -->
         <aside class="users-sidebar">
             <div class="user">
@@ -81,20 +83,18 @@
 <script>
     function toggleDropdown() {
         const dropdownMenu = document.getElementById('dropdown-menu');
-        dropdownMenu.style.display = dropdownMenu.style.display === 'flex' ? 'none' : 'flex';
+        dropdownMenu.style.display = (dropdownMenu.style.display === 'flex') ? 'none' : 'flex';
     }
 
     // Закрытие меню при клике вне его области
     window.onclick = function(event) {
-        if (!event.target.matches('.profile') && !event.target.closest('.profile')) {
-            const dropdownMenu = document.getElementById('dropdown-menu');
-            if (dropdownMenu.style.display === 'flex') {
-                dropdownMenu.style.display = 'none';
-            }
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        const profileContainer = document.querySelector('.profile-container');
+
+        if (!dropdownMenu.contains(event.target) && !profileContainer.contains(event.target)) {
+            dropdownMenu.style.display = 'none';
         }
     }
 </script>
-
-<body>
 </body>
 </html>

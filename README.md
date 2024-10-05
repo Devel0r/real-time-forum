@@ -4,6 +4,8 @@
 - Бэкенд 
 - Чат 
 
+## SPA (Front-end)
+
 ## Forum Service
 
     1. Environment
@@ -77,6 +79,81 @@
 
         - Notify of new message without refreshing the page
         - Use WebSockets in backend and frontend 
-## SPA (Front-end)
 
 
+<!-- Russian -->
+## Сервис чата
+     Личные сообщения
+
+     a. Раздел для отображения тех, кто онлайн/в сети и с кем можно поговорить
+
+        - Последовательность по последнему отправленному сообщению или в алфавитном порядке
+        - Отправка личных сообщений онлайн-пользователям
+        - Раздел должен быть постоянно видимым
+
+    b. Раздел чата
+
+        - Перезагрузка прошлых сообщений при нажатии на пользователя
+        - Отображение предыдущих сообщений
+        - Загрузка последних 10 сообщений, загрузка дополнительных при прокрутке вверх без спама
+
+    c. Формат сообщений
+
+        - Дата отправки сообщения
+        - Имя пользователя отправителя
+
+    d. Функциональность в реальном времени
+
+        - Уведомление о новом сообщении без обновления страницы
+        - Используйте WebSockets на бэкенде и фронтенде
+
+### Chat service architerture, domains, features
+
+#### DDD + Clean Arch maybe? //Go to white a house 
+
+
+#### Domains
+
+***Chat | Room*** 
+    - id
+    - chat_name
+    - is_group_chat bool  (private, group)
+    - **Clients** (userA, userB)
+    - register 
+    - unregister
+    - **Message**
+    - broadcast
+    - **ChatRepository**
+
+***Message***
+    - id
+    - user_or_sender
+    - is_delivered
+    - is_read 
+    - content
+    - date
+    - reacts []*React - 
+    - count_of_reacts -[CountEntity]Reacts
+
+***Client***
+    - id
+    - username
+    - other
+
+    -- ws connnection
+    -- chats
+    -- messages
+
+
+#### Feature
+
+ - create private chat
+ - join chat by invite
+
+ - get all chats by user id
+ - get all online and all offline users of the list
+
+ - write message
+ - read message
+ - reload message
+ - get more messages ( infinity loads )

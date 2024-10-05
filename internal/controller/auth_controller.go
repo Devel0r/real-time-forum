@@ -108,13 +108,40 @@ func (a *AuthController) SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := a.ARepo.GetUserIdByUsername(loginOrEmail)
-	if err != nil {
-		slog.Warn(err.Error())
+	// Проверка, является ли loginOrEmail email-адресом
+	// Объявляем переменные userID и err
+	var userID int
+	var err error
+
+	// Проверка, является ли loginOrEmail email-адресом
+	if strings.Contains(loginOrEmail, "@") {
+		// Если это email, используем метод для получения пользователя по email
+		user, err := a.ARepo.GetUserByOnlyEmail(loginOrEmail)
+		if err != nil {
+			slog.Warn(err.Error())
+			http.Redirect(w, r, "/sign-in", http.StatusBadRequest)
+			return
+		}
+		userID = user.Id
+		fmt.Printf("UserID from email: %d\n", userID)
+	} else {
+		// Если это никнейм, используем метод для получения userID по никнейму
+		userID, err = a.ARepo.GetUserIdByUsername(loginOrEmail)
+		if err != nil {
+			slog.Warn(err.Error())
+			http.Redirect(w, r, "/sign-in", http.StatusBadRequest)
+			return
+		}
+		fmt.Printf("UserID from email: %d\n", userID)
+	}
+
+	if userID == 0 {
+		slog.Warn("UserID is zero after login")
 		http.Redirect(w, r, "/sign-in", http.StatusBadRequest)
 		return
 	}
 
+	// Создание сессии и установка куки
 	cookie, err := createCookie()
 	if err != nil {
 		slog.Warn(err.Error())
@@ -137,7 +164,8 @@ func (a *AuthController) SignIn(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, cookie)
 
-	slog.Info("User successfully logged")
+	fmt.Printf("UserID after login: %d\n", userID)
+	slog.Info("User successfully logged in")
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 
 }

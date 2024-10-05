@@ -88,7 +88,7 @@ func (p *PostRepository) GetUserIdFromSession(r *http.Request) (int, error) {
 }
 
 // GetAllCategories
-func (p *PostRepository) GetAllCategories() (*[]model.Category, error) {
+func (p *PostRepository) GetAllCategories(categories *[]model.Category) (*[]model.Category, error) {
 	fmt.Println("GetAllCategories: ")
 
 	crows, err := p.DB.SQLite.Query("SELECT id, title, created_at FROM categories")
@@ -101,7 +101,6 @@ func (p *PostRepository) GetAllCategories() (*[]model.Category, error) {
 		slog.Error(err.Error())
 	}
 
-	categories := []model.Category{}
 	category := model.Category{}
 	for crows.Next() {
 		if err := crows.Scan(&category.Id, &category.Title, &category.CreatedAt); err != nil {

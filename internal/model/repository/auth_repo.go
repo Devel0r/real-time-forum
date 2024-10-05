@@ -70,6 +70,33 @@ func (a *AuthRepository) GetUserByUsername(username string) (*model.User, error)
 }
 
 // GetUserByEmail
+func (a *AuthRepository) GetUserByOnlyEmail(email string) (*model.User, error) {
+	if email == "" {
+		return nil, serror.ErrEmptyEmail
+	}
+
+	fmt.Printf("\n\nMETHOD GET EMAIL BEFORE SQL REQUEST: %v\n", email)
+
+	user := model.User{}
+	// Выполняем SQL-запрос и сканируем данные в поля структуры user
+	err := a.DB.SQLite.QueryRow("SELECT id, login, age, gender, name, surname, email, password_hash FROM users WHERE email=?", email).Scan(
+		&user.Id, &user.Login, &user.Age, &user.Gender, &user.Name, &user.Surname, &user.Email, &user.PasswordHash)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// Если пользователь не найден, возвращаем ErrUserNotFound
+			return nil, serror.ErrUserNotFound
+		}
+		// Возвращаем другие возможные ошибки
+		return nil, err
+	}
+
+	fmt.Printf("\nMETHOD GET EMAIL AFTER SQL REQUEST:\nID: %v\nLogin: %v\nAge: %v\nGender: %v\nName: %v\nSurname: %v\nEmail: %v\nPasswordHash: %v\n",
+		user.Id, user.Login, user.Age, user.Gender, user.Name, user.Surname, user.Email, user.PasswordHash)
+	// Возвращаем найденного пользователя
+	return &user, nil
+}
+
 func (a *AuthRepository) GetUserByEmail(email string, user *model.User) (*model.User, error) {
 	if email == "" {
 		return nil, serror.ErrEmptyEmail
