@@ -18,16 +18,11 @@ type TemplateData struct {
 	Username   string
 	Categories *[]model.Category
 	Posts      *[]model.Post
-	MPost      *[]MPost
 }
 
 type MPost struct {
-	Post                model.Post
-	CategoryTitle       string
-	Author              string
-	PostComments        *[]model.Comment
-	CountOfPostComments int
-	CurrentUser         string
+	Post        model.Post
+	CurrentUser string
 }
 
 // Main Controller
@@ -83,15 +78,12 @@ func (ctl *Controller) MainController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// got additional information for every post
-	// TODO: getMDataForPosts
 	mposts, _ := ctl.getMDataForPosts(posts, &categories)
 
 	data := TemplateData{
 		Username:   user.Login,
 		Categories: &categories,
-		Posts:      posts,
-		MPost:      mposts,
+		Posts:      mposts,
 	}
 
 	if err := tmp.Execute(w, data); err != nil {
@@ -101,15 +93,14 @@ func (ctl *Controller) MainController(w http.ResponseWriter, r *http.Request) {
 }
 
 // getMDataForPosts
-func (m *Controller) getMDataForPosts(posts *[]model.Post, categories *[]model.Category) (*[]MPost, error) {
+func (m *Controller) getMDataForPosts(posts *[]model.Post, categories *[]model.Category) (*[]model.Post, error) {
 	if posts == nil || categories == nil {
 		return nil, fmt.Errorf("error, recieve a nil pointer of a struct slice")
 	}
 
-	mposts := []MPost{}
-
+	Posts := []model.Post{}
 	for _, post := range *posts {
-		mpost := MPost{Post: post}
+		mpost := post
 
 		// Author
 		user, err := m.AuthController.ARepo.GetUserByUserID(post.UserId)
@@ -137,10 +128,10 @@ func (m *Controller) getMDataForPosts(posts *[]model.Post, categories *[]model.C
 		mpost.CountOfPostComments = len(*comments)
 		mpost.PostComments = comments
 
-		mposts = append(mposts, mpost)
+		Posts = append(Posts, mpost)
 	}
 
-	return &mposts, nil
+	return &Posts, nil
 }
 
 func GetWd() (wd string) {

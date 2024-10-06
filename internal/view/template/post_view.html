@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" href="/static/favicon/favicon16.png">
     <link rel="icon" type="image/png" href="/static/favicon/favicon32.png">
     <link rel="icon" type="image/png" href="/static/favicon/favicon96.png">
-    <title>{{.Post.Title}}</title>
+    <title>{{.Title}}</title>
 </head>
 <body>
 <div class="container">
@@ -50,11 +50,11 @@
         <main class="feed">
             <div class="post">
                 <div class="post-category">{{ .CategoryTitle }}</div>
-                <h2 class="post-title">{{ .Post.Title }}</h2>
-                <p class="post-content">{{ .Post.Content }}</p>
+                <h2 class="post-title">{{ .Title }}</h2>
+                <p class="post-content">{{ .Content }}</p>
                 <h4 class="post-comments">Author: {{.Author}}</h4>
-                <h5 class="post-comments">Date Time: {{.Post.CreatedAt}}</h5>
-                <a href="/posts-delete?post_id={{.Post.Id}}">
+                <h5 class="post-comments">Date Time: {{.CreatedAt}}</h5>
+                <a href="/posts-delete?post_id={{.Id}}">
                     <h3 style="color:crimson;">Delete Post</h3>
                 </a>
                 <br><h4 style="color:aqua; padding: 4px;">Comments ({{.CountOfPostComments}})</h4>
@@ -72,7 +72,7 @@
                     <p>No Comments</p>
                 {{end}}
                 <form id="create-comment" action="/comments" method="POST">
-                    <input type="hidden" value="{{.Post.Id}}" id="comment-post_id" name="comment-post_id">
+                    <input type="hidden" value="{{.Id}}" id="comment-post_id" name="comment-post_id">
                     <label for="comment-content"><b>A new comment</b></label><br>
                     <textarea id="comment-content" name="comment-content" rows="5" placeholder="Enter your comment content" required></textarea>
                     <br><button class="comment-button" type="submit">Add comment</button>

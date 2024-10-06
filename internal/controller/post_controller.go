@@ -45,7 +45,7 @@ func (m *Controller) View(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// getPostByPostID
-	data := MPost{}
+	data := model.Post{}
 	post, err := m.PostController.PostRepo.GetPostByPostID(postID)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -54,7 +54,7 @@ func (m *Controller) View(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	data.Post = *post
+	data = *post
 
 	// category title
 	category, err := m.PostController.PostRepo.GetCategoryByCategoryID(post.CategoryId)

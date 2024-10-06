@@ -57,12 +57,12 @@
         </aside>
 
         <main class="feed">
-            {{ range .MPost }}
-                <a href="/posts/{{.Post.Id}}">
+            {{ range .Posts }}
+                <a href="/posts/{{.Id}}">
                 <div class="post">
                     <div class="post-category">{{ .CategoryTitle }}</div>
-                    <h2 class="post-title">{{ .Post.Title }}</h2>
-                    <p class="post-content">{{ .Post.Content }}</p>
+                    <h2 class="post-title">{{ .Title }}</h2>
+                    <p class="post-content">{{ .Content }}</p>
                     <h4 class="post-comments">Author: {{.Author}}</h4>
                     <span class="post-comments">comments ({{.CountOfPostComments}})</span>
                     

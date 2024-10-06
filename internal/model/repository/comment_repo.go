@@ -86,7 +86,7 @@ func (c *CommentRepository) DeleteComment(commentID int) error {
 // GetAllCommentsByPostID
 func (c *CommentRepository) GetAllCommentsByPostID(postID int) (*[]model.Comment, error) {
 	comments := &[]model.Comment{}
-	crow, err := c.DB.SQLite.Query("SELECT id, content, user_id, post_id, created_at, updated_at FROM comments")
+	crow, err := c.DB.SQLite.Query("SELECT id, content, user_id, post_id, created_at, updated_at FROM comments WHERE post_id=?", postID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			slog.Warn(err.Error())
