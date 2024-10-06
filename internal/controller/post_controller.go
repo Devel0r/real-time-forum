@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"database/sql"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -27,6 +28,92 @@ type PostController struct {
 func NewPostController(db *sqlite.Database) *PostController {
 	return &PostController{
 		PostRepo: repository.NewPostRepository(db),
+	}
+}
+
+// View
+func (m *Controller) View(w http.ResponseWriter, r *http.Request) {
+	tmp := template.Must(template.ParseFiles(GetTmpPath("post-view")))
+
+	// data
+	strID := r.PathValue("id")
+	postID, err := strconv.Atoi(strID)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	// getPostByPostID
+	data := MPost{}
+	post, err := m.PostController.PostRepo.GetPostByPostID(postID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			slog.Warn(err.Error())
+			ErrorController(w, http.StatusNotFound, "Post Not Found")
+			return
+		}
+	}
+	data.Post = *post
+
+	// category title
+	category, err := m.PostController.PostRepo.GetCategoryByCategoryID(post.CategoryId)
+	if err != nil {
+		slog.Warn(err.Error())
+		data.CategoryTitle = "Unknown"
+	}
+	data.CategoryTitle = category.Title
+
+	// Post Comments
+	comments, err := m.CommentController.CommRepo.GetAllCommentsByPostID(post.Id)
+	if err != nil {
+		slog.Warn(err.Error())
+		data.CountOfPostComments = 0
+		data.PostComments = &[]model.Comment{}
+	}
+	data.PostComments = comments
+	data.CountOfPostComments = len(*comments)
+
+	if len(*comments) > 0 {
+		comms := []model.Comment{}
+		for _, com := range *comments {
+			user, err := m.ARepo.GetUserByUserID(post.UserId)
+			if err != nil {
+				slog.Warn(err.Error())
+				com.Author = "Unknown"
+			}
+			com.Author = user.Login
+			comms = append(comms, com)
+		}
+		data.PostComments = &comms
+	}
+
+	// Author
+	user, err := m.ARepo.GetUserByUserID(post.UserId)
+	if err != nil {
+		slog.Warn(err.Error())
+		data.Author = "Unknown"
+	}
+	data.Author = user.Login
+
+	usID, err := m.AuthController.ARepo.GetUserIDFromSession(w, r)
+	if err != nil {
+		slog.Warn(err.Error())
+		http.Redirect(w, r, "/sign-in", http.StatusSeeOther)
+		return
+	}
+
+	us, err := m.AuthController.ARepo.GetUserByUserID(usID)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Redirect(w, r, "/sign-in", http.StatusSeeOther)
+		return
+	}
+	data.CurrentUser = us.Login
+
+	if err := tmp.Execute(w, data); err != nil {
+		slog.Error(err.Error())
+		return
 	}
 }
 
@@ -128,6 +215,7 @@ func (p *PostController) Delete(w http.ResponseWriter, r *http.Request) {
 	postId, err := strconv.Atoi(postIdStr)
 	if err != nil || postId < 0 {
 		slog.Debug("Invalid post")
+		ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 		return
 	}
 
@@ -136,11 +224,12 @@ func (p *PostController) Delete(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error(err.Error())
 		slog.Info("Failed to get user id from session")
+		http.Redirect(w, r, "/sign-in", http.StatusSeeOther)
 		return
 	}
 
 	// Извлекаем пост из БД
-	postID, err := p.PostRepo.GetPostByID(postId)
+	post, err := p.PostRepo.GetPostByPostID(postId)
 	if err != nil {
 		slog.Error(err.Error())
 		slog.Info("Post not found")
@@ -148,9 +237,9 @@ func (p *PostController) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Проверка на то что этот юзер действительно владеет постом
-	if postID != userID {
-		slog.Error(err.Error())
-		slog.Info("It is not your post bratan")
+	if post.UserId != userID {
+		slog.Info("It is not your post")
+		ErrorController(w, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
 		return
 	}
 

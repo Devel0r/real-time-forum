@@ -36,23 +36,8 @@ func (p *PostRepository) SavePost(post *model.Post) (id int, err error) {
 }
 
 func (p *PostRepository) DeletePost(postId int) error {
-	if postId == 0 {
-		return serror.ErrEmptyPostData
-	}
-
-	res, err := p.DB.SQLite.Exec("DELETE FROM posts WHERE id=?", postId)
+	_, err := p.DB.SQLite.Exec("DELETE FROM posts WHERE id=?", postId)
 	if err != nil {
-		return err
-	}
-
-	// Проверяем, сколько строк было затронуто
-	rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rowsAffected == 0 {
-		// Пост не был удалён, возможно, он не найден
 		return err
 	}
 
@@ -67,6 +52,23 @@ func (p *PostRepository) GetPostByID(postId int) (id int, err error) {
 	}
 
 	return postId, nil
+}
+
+// getPostByPostID
+func (p *PostRepository) GetPostByPostID(id int) (*model.Post, error) {
+	post := model.Post{}
+	err := p.DB.SQLite.QueryRow("SELECT id, title, content, image, created_at, updated_at, category_id, user_id FROM posts WHERE id=?", id).Scan(&post.Id,
+		&post.Title, &post.Content, &post.Image, &post.CreatedAt, &post.UpdatedAt, &post.CategoryId, &post.UserId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			slog.Warn(err.Error())
+			return nil, err
+		}
+		slog.Error(err.Error())
+		return nil, err
+	}
+
+	return &post, err
 }
 
 func (p *PostRepository) GetUserIdFromSession(r *http.Request) (int, error) {

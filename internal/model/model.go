@@ -46,8 +46,9 @@ type Post struct {
 // time.Duration -> 10 second, i hour httpServer.WriteTimeout - 10 second
 
 type Comment struct {
-	Id        int       `sql:"id"`
-	Content   string    `sql:"content"`
+	Id        int    `sql:"id"`
+	Content   string `sql:"content"`
+	Author    string
 	UserId    int       `sql:"user_id"`
 	PostId    int       `sql:"post_id"`
 	CreatedAt time.Time `sql:"created_at"`

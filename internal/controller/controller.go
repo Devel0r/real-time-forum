@@ -27,6 +27,7 @@ type MPost struct {
 	Author              string
 	PostComments        *[]model.Comment
 	CountOfPostComments int
+	CurrentUser         string
 }
 
 // Main Controller
@@ -155,6 +156,8 @@ func GetTmpPath(tmpName string) (tmpPath string) {
 		tmpPath = GetWd() + "/internal/view/template/sign_in.html"
 	case "post":
 		tmpPath = GetWd() + "/internal/view/template/post.html"
+	case "post-view":
+		tmpPath = GetWd() + "/internal/view/template/post_view.html"
 	case "error":
 		tmpPath = GetWd() + "/internal/view/template/error.html"
 	case "index":

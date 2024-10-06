@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" href="/static/favicon/favicon16.png">
     <link rel="icon" type="image/png" href="/static/favicon/favicon32.png">
     <link rel="icon" type="image/png" href="/static/favicon/favicon96.png">
-    <title>Real Time Forum</title>
+    <title>{{.Post.Title}}</title>
 </head>
 <body>
 <div class="container">
@@ -34,7 +34,7 @@
                         <div class="profile-icon">
                             <img src="/static/img/profile.png" alt="User Avatar">
                         </div>
-                        <span class="user-name">{{.Username}}</span>
+                        <span class="user-name">{{.CurrentUser}}</span>
                     </div>
                     <!-- Выпадающее меню -->
                     <div class="dropdown-menu" id="dropdown-menu">
@@ -47,36 +47,47 @@
     <!-- Content -->
     <div class="content">
          <!-- Left Sidebar (Category Selector) -->
-         <aside class="sidebar">
-            <select class="category-selector" onchange="location = this.value;">
-                <option value="" disabled selected>...select category</option>
-                {{ range .Categories }}
-                    <option value="/category/{{ .Id }}">{{ .Title }}</option>
-                {{ end }}
-            </select>
-        </aside>
-
         <main class="feed">
-            {{ range .MPost }}
-                <a href="/posts/{{.Post.Id}}">
-                <div class="post">
-                    <div class="post-category">{{ .CategoryTitle }}</div>
-                    <h2 class="post-title">{{ .Post.Title }}</h2>
-                    <p class="post-content">{{ .Post.Content }}</p>
-                    <h4 class="post-comments">Author: {{.Author}}</h4>
-                    <span class="post-comments">comments ({{.CountOfPostComments}})</span>
-                    
-                </div>
+            <div class="post">
+                <div class="post-category">{{ .CategoryTitle }}</div>
+                <h2 class="post-title">{{ .Post.Title }}</h2>
+                <p class="post-content">{{ .Post.Content }}</p>
+                <h4 class="post-comments">Author: {{.Author}}</h4>
+                <h5 class="post-comments">Date Time: {{.Post.CreatedAt}}</h5>
+                <span class="post-comments">comments ({{.CountOfPostComments}})</span>
+
+                <a href="/posts-delete?post_id={{.Post.Id}}">
+                    <h3 style="color:crimson;">Delete Post</h3>
                 </a>
-            {{ else }}
-                <p>No posts available.</p>
-            {{ end }}
+                <span class="post-comments">Comments</span>
+                {{ range .PostComments}}
+
+
+                    <div class="comment">
+                        <h4 class="post-comments">Author: {{.Author}}</h4>
+                        <p class="post-content">{{ .Content }}</p>
+                        <h5 class="post-comments">Date Time: {{.CreatedAt}}</h5>
+                        <a href="/delete-comment?comment_id={{.Id}}">
+                            <br>
+                            <h3 style="color:crimson;">Delete Comment</h3>
+                        </a>
+                    </div>
+
+                {{else}}
+                    <p>No Comments</p>
+                {{end}}
+                <a href="/create-comment?post_id={{.Post.Id}}">
+                    <br>
+                    <h5 class="post-category">Add comment</h5>
+                    <br>
+                </a>
+            </div>
         </main>
         <!-- Right Sidebar (Users Online) -->
         <aside class="users-sidebar">
             <div class="user">
                 <div class="user-avatar"></div>
-                <span class="user-name">test</span>
+                <span class="user-name">{{.Author}}</span>
                 <span class="status-dot online"></span>
             </div>
             <!-- Add more users here -->
