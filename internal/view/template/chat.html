@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="../static/css/chat.css">
+    <link rel="icon" type="image/png" href="../static/favicon/favicon16.png">
+    <link rel="icon" type="image/png" href="../static/favicon/favicon32.png">
+    <link rel="icon" type="image/png" href="../static/favicon/favicon96.png">
+    <title>Real Time Forum</title>
+</head>
+<body>
+<div class="container">
+     <!-- Header -->
+      <header class="header">
+            <!-- Левая часть: Логотип -->
+            <div class="logo">
+                <a href="/">
+                    <img src="../static/img/logo.png" alt="Logo" class="logo-image">
+                </a>
+            </div>
+            <!-- Правая часть: Меню пользователя -->
+            <div class="user-menu">
+                <!-- Профиль пользователя -->
+                <div class="profile">
+                    <div class="profile-container" onclick="toggleDropdown()">
+                        <div class="profile-icon">
+                            <img src="../static/img/profile.png" alt="User Avatar">
+                        </div>
+                        <span class="user-name">{{.Username}}</span>
+                    </div>
+                    <!-- Выпадающее меню -->
+                    <div class="dropdown-menu" id="dropdown-menu">
+                        <button class="dropdown-item" onclick="window.location.href='https://www.youtube.com/watch?v=obmlZH3X9gs'">Secret Button</button>
+                        <button class="dropdown-item" onclick="window.location.href='/sign-out'">Sign Out</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+     <!-- Content -->
+     <div class="chat-container">
+        <!-- Левая колонка: список чатов -->
+        <div class="chat-list">
+            <!-- Здесь динамически генерируется список чатов -->
+            <div class="chat-item active">
+                <div class="chat-avatar">
+                    <img src="../static/img/user1.png" alt="User Avatar">
+                </div>
+                <div class="chat-info">
+                    <span class="chat-name">User1</span>
+                    <span class="chat-last-message">Последнее сообщение...</span>
+                </div>
+            </div>
+            <!-- Добавьте другие чаты -->
+        </div>
+
+        <!-- Центральная область: переписка -->
+        <div class="chat-content">
+            <div class="messages">
+                <!-- Здесь отображаются сообщения -->
+                <div class="message incoming">
+                    <div class="message-avatar">
+                        <img src="../static/img/user1.png" alt="User Avatar">
+                    </div>
+                    <div class="message-text">
+                        <p>Привет! Как дела?</p>
+                        <span class="message-time">10:30 AM</span>
+                    </div>
+                </div>
+                <div class="message outgoing">
+                    <div class="message-text">
+                        <p>Привет! Всё хорошо, спасибо.</p>
+                        <span class="message-time">10:32 AM</span>
+                    </div>
+                </div>
+                <!-- Добавьте другие сообщения -->
+            </div>
+            <!-- Поле ввода сообщения -->
+            <div class="message-input">
+                <input type="text" placeholder="Введите сообщение..." id="message-input">
+                <button id="send-button">Отправить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleDropdown() {
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        dropdownMenu.style.display = (dropdownMenu.style.display === 'flex') ? 'none' : 'flex';
+    }
+
+    // Закрытие меню при клике вне его области
+    window.onclick = function(event) {
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        const profileContainer = document.querySelector('.profile-container');
+
+        if (!dropdownMenu.contains(event.target) && !profileContainer.contains(event.target)) {
+            dropdownMenu.style.display = 'none';
+        }
+    }
+</script>
+</body>
+</html>
