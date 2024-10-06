@@ -57,12 +57,13 @@
         </aside>
 
         <main class="feed">
-            {{ range .Posts }}
+            {{ range .MPost }}
                 <div class="post">
-                    <div class="post-category">{{ .CategoryId }}</div>
-                    <h2 class="post-title">{{ .Title }}</h2>
-                    <p class="post-content">{{ .Content }}</p>
-                    <span class="post-comments">comments</span>
+                    <div class="post-category">{{ .CategoryTitle }}</div>
+                    <h2 class="post-title">{{ .Post.Title }}</h2>
+                    <p class="post-content">{{ .Post.Content }}</p>
+                    <h4 class="post-comments">Author: {{.Author}}</h4>
+                    <span class="post-comments">comments ({{.CountOfPostComments}})</span>
                 </div>
             {{ else }}
                 <p>No posts available.</p>

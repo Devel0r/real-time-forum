@@ -114,6 +114,19 @@ func (p *PostRepository) GetAllCategories() ([]model.Category, error) {
 	return categories, nil
 }
 
+// GetCategoryByCategoryID
+func (p *PostRepository) GetCategoryByCategoryID(id int) (*model.Category, error) {
+	cat := model.Category{}
+	if err := p.DB.SQLite.QueryRow("SELECT id, title, created_at FROM categories WHERE id=?", id).Scan(&cat.Id, &cat.Title, &cat.CreatedAt); err != nil {
+		if err == sql.ErrNoRows {
+			slog.Warn(err.Error())
+			cat.Title = "Unknown"
+		}
+	}
+
+	return &cat, nil
+}
+
 // GetAllPosts
 func (p *PostRepository) GetAllPosts() (*[]model.Post, error) {
 	prow, err := p.DB.SQLite.Query("SELECT id, title, content, image, created_at, updated_at, category_id, user_id FROM posts")

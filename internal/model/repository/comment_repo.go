@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"database/sql"
+	"log/slog"
 	"net/http"
 
 	"github.com/Pruel/real-time-forum/internal/model"
@@ -23,8 +25,8 @@ func (c *CommentRepository) SaveComment(comment *model.Comment) (id int, err err
 		return 0, serror.ErrEmptyCommentData
 	}
 
-	res, err := c.DB.SQLite.Exec("INSERT INTO comment(id, content, user_id, post_id, created_at, updated_at) VALUES(?, ?, ?, ?, ?, ?)",
-		comment.Id, comment.Content, comment.UserId, comment.PostId, comment.PostId, comment.CreatedAt, comment.UpdatedAt)
+	res, err := c.DB.SQLite.Exec("INSERT INTO comment(content, user_id, post_id, created_at, updated_at) VALUES(?, ?, ?, ?, ?)",
+		comment.Content, comment.UserId, comment.PostId, comment.PostId, comment.CreatedAt, comment.UpdatedAt)
 	if err != nil {
 		return 0, err
 	}
@@ -91,4 +93,30 @@ func (c *CommentRepository) DeleteComment(commentID int) error {
 	}
 
 	return nil
+}
+
+// GetAllCommentsByPostID
+func (c *CommentRepository) GetAllCommentsByPostID(postID int) (*[]model.Comment, error) {
+	comments := &[]model.Comment{}
+	crow, err := c.DB.SQLite.Query("SELECT id, content, user_id, post_id, created_at, updated_at FROM comments")
+	if err != nil {
+		if err == sql.ErrNoRows {
+			slog.Warn(err.Error())
+			return comments, nil
+		}
+		slog.Error(err.Error())
+		return nil, err
+	}
+
+	for crow.Next() {
+		cm := model.Comment{}
+		if err := crow.Scan(&cm.Id, &cm.Content, &cm.UserId, &cm.PostId, &cm.CreatedAt, &cm.UpdatedAt); err != nil {
+			slog.Warn(err.Error())
+			continue
+		}
+
+		*comments = append(*comments, cm)
+	}
+
+	return comments, nil
 }

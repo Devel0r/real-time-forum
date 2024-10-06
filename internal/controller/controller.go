@@ -18,6 +18,15 @@ type TemplateData struct {
 	Username   string
 	Categories *[]model.Category
 	Posts      *[]model.Post
+	MPost      *[]MPost
+}
+
+type MPost struct {
+	Post                model.Post
+	CategoryTitle       string
+	Author              string
+	PostComments        *[]model.Comment
+	CountOfPostComments int
 }
 
 // Main Controller
@@ -73,16 +82,64 @@ func (ctl *Controller) MainController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// got additional information for every post
+	// TODO: getMDataForPosts
+	mposts, _ := ctl.getMDataForPosts(posts, &categories)
+
 	data := TemplateData{
 		Username:   user.Login,
 		Categories: &categories,
 		Posts:      posts,
+		MPost:      mposts,
 	}
 
 	if err := tmp.Execute(w, data); err != nil {
 		slog.Error(err.Error())
 		return
 	}
+}
+
+// getMDataForPosts
+func (m *Controller) getMDataForPosts(posts *[]model.Post, categories *[]model.Category) (*[]MPost, error) {
+	if posts == nil || categories == nil {
+		return nil, fmt.Errorf("error, recieve a nil pointer of a struct slice")
+	}
+
+	mposts := []MPost{}
+
+	for _, post := range *posts {
+		mpost := MPost{Post: post}
+
+		// Author
+		user, err := m.AuthController.ARepo.GetUserByUserID(post.UserId)
+		if err != nil {
+			slog.Warn(err.Error())
+			mpost.Author = "unkown"
+		}
+		mpost.Author = user.Login
+
+		// Category Title
+		category, err := m.PostController.PostRepo.GetCategoryByCategoryID(post.CategoryId)
+		if err != nil {
+			slog.Warn(err.Error())
+			mpost.CategoryTitle = "Unknown"
+		}
+		mpost.CategoryTitle = category.Title
+
+		// Comments of the Post
+		comments, err := m.CommentController.CommRepo.GetAllCommentsByPostID(post.Id)
+		if err != nil {
+			slog.Warn(err.Error())
+			mpost.CountOfPostComments = 0
+			mpost.PostComments = &[]model.Comment{}
+		}
+		mpost.CountOfPostComments = len(*comments)
+		mpost.PostComments = comments
+
+		mposts = append(mposts, mpost)
+	}
+
+	return &mposts, nil
 }
 
 func GetWd() (wd string) {
