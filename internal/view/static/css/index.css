@@ -137,11 +137,19 @@ body {
 .comment {
     background-color: #423e3e;
     padding: 30px;
-    margin-bottom: 30px;
-    border-radius: 15px;
+    margin-bottom: 10px;
+    border-radius: 25px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    color: aliceblue;
 }
 
+.comment-button {
+    font-size: 10px;
+    background-color: #12b12f;
+    color:white;
+    padding: 5px;
+    border-radius: 5px;
+}
 
 .post-category {
     font-size: 12px;

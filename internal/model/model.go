@@ -38,6 +38,11 @@ type Post struct {
 	UpdatedAt  time.Time      `sql:"updated_at"`
 	CategoryId int            `sql:"category_id"` // page+categories list  -> games -> games == db - games - id - 3 -> post.CategoryId = 3
 	UserId     int            `sql:"user_id"`
+	CountOfPostComments int
+	CategoryTitle string
+	Author string
+	PostComments *[]Comment
+
 }
 
 // Если нам нужны какие либо манипулияции со временем, то юзаем time.Duration, если тупо временная метка то юзаемт time.Time

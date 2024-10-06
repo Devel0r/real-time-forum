@@ -71,9 +71,9 @@ func (r *Router) InitRouter() {
 	// // comments routes
 	// r.Mux.HandleFunc("GET /comments", r.Ctl.MainController)         // get all comments
 	// r.Mux.HandleFunc("GET /comments/{id}", r.Ctl.MainController)    // get a comment by id
-	// r.Mux.HandleFunc("POST /comments", r.Ctl.MainController)        // create a new comment
+	r.Mux.HandleFunc("POST /comments", r.Ctl.CreateComment) // create a new comment
 	// r.Mux.HandleFunc("PUT /comments/{id}", r.Ctl.MainController)    // update a comment by id
-	// r.Mux.HandleFunc("DELETE /comments/{id}", r.Ctl.MainController) // delete a comment by id
+	r.Mux.HandleFunc("GET /comments-delete", r.Ctl.DeleteComment) // delete a comment by id
 }
 
 func (r *Router) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {

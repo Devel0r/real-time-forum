@@ -25,7 +25,7 @@ func (c *CommentRepository) SaveComment(comment *model.Comment) (id int, err err
 		return 0, serror.ErrEmptyCommentData
 	}
 
-	res, err := c.DB.SQLite.Exec("INSERT INTO comment(content, user_id, post_id, created_at, updated_at) VALUES(?, ?, ?, ?, ?)",
+	res, err := c.DB.SQLite.Exec("INSERT INTO comments(content, user_id, post_id, created_at, updated_at) VALUES(?, ?, ?, ?, ?)",
 		comment.Content, comment.UserId, comment.PostId, comment.PostId, comment.CreatedAt, comment.UpdatedAt)
 	if err != nil {
 		return 0, err
@@ -53,14 +53,15 @@ func (c *CommentRepository) GetUserSessionById(r *http.Request) (id int, err err
 	return userID, err
 }
 
-func (c *CommentRepository) GetCommentOwnerID(commentID int) (int, error) {
-	var ownerID int
-	err := c.DB.SQLite.QueryRow("SELECT user_id FROM comments WHERE id = ?", commentID).Scan(&ownerID)
+func (c *CommentRepository) GetCommentByCommentID(commentID int) (model.Comment, error) {
+	com := model.Comment{}
+	err := c.DB.SQLite.QueryRow("SELECT id, content, user_id, post_id, created_at, updated_at FROM comments WHERE id=?", commentID).Scan(&com.Id,
+		&com.Content, &com.UserId, &com.PostId, &com.CreatedAt, &com.UpdatedAt)
 	if err != nil {
-		return 0, err
+		return com, err
 	}
 
-	return ownerID, nil
+	return com, nil
 }
 
 func (c *CommentRepository) GetPostByID(postID int) (id int, err error) {
@@ -74,21 +75,8 @@ func (c *CommentRepository) GetPostByID(postID int) (id int, err error) {
 }
 
 func (c *CommentRepository) DeleteComment(commentID int) error {
-	if commentID == 0 {
-		return serror.ErrEmptyCommentData
-	}
-
-	res, err := c.DB.SQLite.Exec("DELETE FROM comments WHERE id=?", commentID)
+	_, err := c.DB.SQLite.Exec("DELETE FROM comments WHERE id=?", commentID)
 	if err != nil {
-		return err
-	}
-
-	rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rowsAffected == 0 {
 		return err
 	}
 

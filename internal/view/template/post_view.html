@@ -54,33 +54,29 @@
                 <p class="post-content">{{ .Post.Content }}</p>
                 <h4 class="post-comments">Author: {{.Author}}</h4>
                 <h5 class="post-comments">Date Time: {{.Post.CreatedAt}}</h5>
-                <span class="post-comments">comments ({{.CountOfPostComments}})</span>
-
                 <a href="/posts-delete?post_id={{.Post.Id}}">
                     <h3 style="color:crimson;">Delete Post</h3>
                 </a>
-                <span class="post-comments">Comments</span>
+                <br><h4 style="color:aqua; padding: 4px;">Comments ({{.CountOfPostComments}})</h4>
                 {{ range .PostComments}}
-
-
                     <div class="comment">
                         <h4 class="post-comments">Author: {{.Author}}</h4>
                         <p class="post-content">{{ .Content }}</p>
-                        <h5 class="post-comments">Date Time: {{.CreatedAt}}</h5>
-                        <a href="/delete-comment?comment_id={{.Id}}">
-                            <br>
-                            <h3 style="color:crimson;">Delete Comment</h3>
+                        <h5 class="post-comments">Date Time: {{.CreatedAt}}</h5><br>
+                        <a href="/comments-delete?comment_id={{.Id}}">
+                            <h4 style="color: red;">Delete Comment</h4>
                         </a>
                     </div>
 
                 {{else}}
                     <p>No Comments</p>
                 {{end}}
-                <a href="/create-comment?post_id={{.Post.Id}}">
-                    <br>
-                    <h5 class="post-category">Add comment</h5>
-                    <br>
-                </a>
+                <form id="create-comment" action="/comments" method="POST">
+                    <input type="hidden" value="{{.Post.Id}}" id="comment-post_id" name="comment-post_id">
+                    <label for="comment-content"><b>A new comment</b></label><br>
+                    <textarea id="comment-content" name="comment-content" rows="5" placeholder="Enter your comment content" required></textarea>
+                    <br><button class="comment-button" type="submit">Add comment</button>
+                </form>
             </div>
         </main>
         <!-- Right Sidebar (Users Online) -->
