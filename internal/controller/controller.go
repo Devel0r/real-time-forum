@@ -31,6 +31,7 @@ type Controller struct {
 	*PostController
 	*CommentController
 	// category controller for Admin set up maybe in future
+	*WsChatController // WebSocketCtl
 }
 
 func New(db *sqlite.Database) *Controller {
@@ -38,6 +39,7 @@ func New(db *sqlite.Database) *Controller {
 		AuthController:    NewAuthController(db),
 		PostController:    NewPostController(db),
 		CommentController: NewCommentController(db),
+		WsChatController:  NewWSChatController(),
 	}
 }
 
@@ -152,6 +154,10 @@ func GetTmpPath(tmpName string) (tmpPath string) {
 	case "error":
 		tmpPath = GetWd() + "/internal/view/template/error.html"
 	case "index":
+		tmpPath = GetWd() + "/internal/view/template/index.html"
+	case "wschat":
+		tmpPath = GetWd() + "/internal/view/template/chat.html"
+	default:
 		tmpPath = GetWd() + "/internal/view/template/index.html"
 	}
 

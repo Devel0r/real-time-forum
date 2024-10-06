@@ -28,6 +28,11 @@
                         <img src="/static/img/create_post.png" alt="Create Post" class="icon-plus">
                     </a>
                 </div>
+                <div class="create-post">
+                    <a href="/chat">
+                        <img src="/static/img/chat.png" alt="Chat" class="icon-plus">
+                    </a>
+                </div>
                 <!-- Профиль пользователя -->
                 <div class="profile">
                     <div class="profile-container" onclick="toggleDropdown()">
@@ -54,6 +59,7 @@
                 <p class="post-content">{{ .Content }}</p>
                 <h4 class="post-comments">Author: {{.Author}}</h4>
                 <h5 class="post-comments">Date Time: {{.CreatedAt}}</h5>
+                <!-- <h5 class="post-comments">Date Time: {{.CreatedAt.Format "2000-10-13 3:03:03"}}</h5> -->
                 <a href="/posts-delete?post_id={{.Id}}">
                     <h3 style="color:crimson;">Delete Post</h3>
                 </a>
@@ -83,7 +89,7 @@
         <aside class="users-sidebar">
             <div class="user">
                 <div class="user-avatar"></div>
-                <span class="user-name">{{.Author}}</span>
+                <span class="user-name">{{.CurrentUser}}</span>
                 <span class="status-dot online"></span>
             </div>
             <!-- Add more users here -->

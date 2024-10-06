@@ -74,6 +74,24 @@ func (r *Router) InitRouter() {
 	r.Mux.HandleFunc("POST /comments", r.Ctl.CreateComment) // create a new comment
 	// r.Mux.HandleFunc("PUT /comments/{id}", r.Ctl.MainController)    // update a comment by id
 	r.Mux.HandleFunc("GET /comments-delete", r.Ctl.DeleteComment) // delete a comment by id
+
+	// Chat
+	r.Mux.HandleFunc("GET /chat", r.Ctl.ChatPage)
+	// websocket
+	// r.Mux.HandleFunc("GET /ws/create-pvchat", r.Ctl.WsChatController.ChatPage)
+	// r.Mux.HandleFunc("GET /ws/join-pvchat", r.Ctl.WsChatController.ChatPage)
+
+	// get all chats with last messages by user_id
+	// r.Mux.HandleFunc("GET /ws/chats/get-all", r.Ctl.WsChatController.ChatPage)
+	
+	// get all online and offline users of the list
+	// r.Mux.HandleFunc("GET /ws/chat/users/get-all", r.Ctl.WsChatController.ChatPage)
+
+	// chat op
+	// r.Mux.HandleFunc("GET /ws/chat/write-msg", r.Ctl.WsChatController.ChatPage)
+	// r.Mux.HandleFunc("GET /ws/chat/read-msg", r.Ctl.WsChatController.ChatPage)
+	// r.Mux.HandleFunc("GET /ws/chat/reload-msg", r.Ctl.WsChatController.ChatPage)
+	// r.Mux.HandleFunc("GET /ws/chat/more-msgs", r.Ctl.WsChatController.ChatPage)
 }
 
 func (r *Router) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {

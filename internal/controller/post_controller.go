@@ -77,7 +77,7 @@ func (m *Controller) View(w http.ResponseWriter, r *http.Request) {
 	if len(*comments) > 0 {
 		comms := []model.Comment{}
 		for _, com := range *comments {
-			user, err := m.ARepo.GetUserByUserID(post.UserId)
+			user, err := m.ARepo.GetUserByUserID(com.UserId)
 			if err != nil {
 				slog.Warn(err.Error())
 				com.Author = "Unknown"
