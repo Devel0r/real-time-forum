@@ -62,9 +62,9 @@ func (r *Router) InitRouter() {
 	// // posts routes
 	// r.Mux.HandleFunc("GET /posts", r.Ctl.MainController)         // get all posts // CRUD
 	// r.Mux.HandleFunc("GET /posts/{id}", r.Ctl.MainController)    // get a post by id
-	r.Mux.HandleFunc("GET /create-posts", r.Ctl.PostController.CreatePage) // create a new post
-	r.Mux.HandleFunc("POST /posts", r.Ctl.PostController.Create)           // create a new post
-	r.Mux.HandleFunc("DELETE /posts/{id}", r.Ctl.PostController.Delete)    // delete a post by id
+	r.Mux.HandleFunc("GET /create-posts", r.Ctl.CreatePage)             // create a new post
+	r.Mux.HandleFunc("POST /posts", r.Ctl.PostController.Create)        // create a new post
+	r.Mux.HandleFunc("DELETE /posts/{id}", r.Ctl.PostController.Delete) // delete a post by id
 	// Special functi
 	// r.Mux.HandleFunc("PUT /posts/{id}", r)    // update a post by id
 

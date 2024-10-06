@@ -1,19 +1,23 @@
 package controller
 
 import (
+	"database/sql"
 	"fmt"
 	"html/template"
 	"log/slog"
 	"net/http"
 	"os"
 
+	"github.com/Pruel/real-time-forum/internal/model"
 	"github.com/Pruel/real-time-forum/pkg/sqlite"
 )
 
 var TmpPath string
 
 type TemplateData struct {
-	Username string
+	Username   string
+	Categories *[]model.Category
+	Posts      *[]model.Post
 }
 
 // Main Controller
@@ -26,7 +30,9 @@ type Controller struct {
 
 func New(db *sqlite.Database) *Controller {
 	return &Controller{
-		AuthController: NewAuthController(db),
+		AuthController:    NewAuthController(db),
+		PostController:    NewPostController(db),
+		CommentController: NewCommentController(db),
 	}
 }
 
@@ -34,28 +40,43 @@ func (ctl *Controller) MainController(w http.ResponseWriter, r *http.Request) {
 
 	tmp := template.Must(template.ParseFiles(GetTmpPath("index")))
 
-	// Getting user from session 
+	// Getting user from session
 	userID, err := ctl.AuthController.ARepo.GetUserIDFromSession(w, r)
 	if err != nil {
 		slog.Warn(err.Error())
+		http.Redirect(w, r, "/sign-in", http.StatusSeeOther)
 		return
 	}
-	// Getting user information 
-	name, err := ctl.AuthController.ARepo.GetUserNameByUserID(userID)
+
+	// Getting user information
+	user, err := ctl.AuthController.ARepo.GetUserByUserID(userID)
 	if err != nil {
 		slog.Warn(err.Error())
 		return
 	}
 
-	// TODO: Getting categories 
+	categories, err := ctl.PostController.PostRepo.GetAllCategories()
+	if err != nil {
+		if err == sql.ErrNoRows {
+			slog.Warn(err.Error())
+		}
+		slog.Error(err.Error())
+		return
+	}
 
-	// TODO: Getting posts
-
+	posts, err := ctl.PostController.PostRepo.GetAllPosts()
+	if err != nil {
+		if err == sql.ErrNoRows {
+			slog.Warn(err.Error())
+		}
+		slog.Error(err.Error())
+		return
+	}
 
 	data := TemplateData{
-		Username: name,
-		Categories: categories, 
-		Posts: posts, 
+		Username:   user.Login,
+		Categories: &categories,
+		Posts:      posts,
 	}
 
 	if err := tmp.Execute(w, data); err != nil {

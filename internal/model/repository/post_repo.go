@@ -2,7 +2,6 @@ package repository
 
 import (
 	"database/sql"
-	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -26,8 +25,8 @@ func (p *PostRepository) SavePost(post *model.Post) (id int, err error) {
 		return 0, serror.ErrEmptyPostData
 	}
 
-	res, err := p.DB.SQLite.Exec("INSERT INTO posts(id, title, content, created_at, updated_at, category_id, user_id) VALUES(?, ?, ?, ?, ?, ?, ?)",
-		post.Id, post.Title, post.Content, post.CreatedAt, post.UpdatedAt, post.CategoryId, post.UserId)
+	res, err := p.DB.SQLite.Exec("INSERT INTO posts(title, content, created_at, updated_at, category_id, user_id) VALUES(?, ?, ?, ?, ?, ?)",
+		post.Title, post.Content, post.CreatedAt, post.UpdatedAt, post.CategoryId, post.UserId)
 	if err != nil {
 		return 0, err
 	}
@@ -88,21 +87,19 @@ func (p *PostRepository) GetUserIdFromSession(r *http.Request) (int, error) {
 }
 
 // GetAllCategories
-func (p *PostRepository) GetAllCategories(categories *[]model.Category) (*[]model.Category, error) {
-	fmt.Println("GetAllCategories: ")
-
+func (p *PostRepository) GetAllCategories() ([]model.Category, error) {
 	crows, err := p.DB.SQLite.Query("SELECT id, title, created_at FROM categories")
 	if err != nil {
-		fmt.Printf("\n\nERROR HERE: %v\n\n", crows)
 		if err == sql.ErrNoRows {
 			slog.Warn("Categories not found")
-			return nil, err
 		}
 		slog.Error(err.Error())
+		return nil, err
 	}
 
-	category := model.Category{}
+	categories := []model.Category{}
 	for crows.Next() {
+		category := model.Category{}
 		if err := crows.Scan(&category.Id, &category.Title, &category.CreatedAt); err != nil {
 			if err == sql.ErrNoRows {
 				slog.Warn("Category not found")
@@ -114,5 +111,34 @@ func (p *PostRepository) GetAllCategories(categories *[]model.Category) (*[]mode
 		categories = append(categories, category)
 	}
 
-	return &categories, nil
+	return categories, nil
+}
+
+// GetAllPosts
+func (p *PostRepository) GetAllPosts() (*[]model.Post, error) {
+	prow, err := p.DB.SQLite.Query("SELECT id, title, content, image, created_at, updated_at, category_id, user_id FROM posts")
+	if err != nil {
+		if err == sql.ErrNoRows {
+			slog.Warn(err.Error())
+		}
+		slog.Error(err.Error())
+		return nil, err
+	}
+
+	posts := []model.Post{}
+	for prow.Next() {
+		post := model.Post{}
+		err := prow.Scan(&post.Id, &post.Title, &post.Content, &post.Image, &post.CreatedAt, &post.UpdatedAt, &post.CategoryId, &post.UserId)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				slog.Warn(err.Error())
+				continue
+			}
+			slog.Error(err.Error())
+			break
+		}
+		posts = append(posts, post)
+	}
+
+	return &posts, nil
 }

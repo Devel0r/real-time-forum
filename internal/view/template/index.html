@@ -59,10 +59,10 @@
         <main class="feed">
             {{ range .Posts }}
                 <div class="post">
-                    <div class="post-category">{{ .Category.Title }}</div>
+                    <div class="post-category">{{ .CategoryId }}</div>
                     <h2 class="post-title">{{ .Title }}</h2>
                     <p class="post-content">{{ .Content }}</p>
-                    <span class="post-comments">{{ len .Comments }} comments</span>
+                    <span class="post-comments">comments</span>
                 </div>
             {{ else }}
                 <p>No posts available.</p>

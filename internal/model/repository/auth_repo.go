@@ -191,17 +191,18 @@ func (a *AuthRepository) GetUserIDFromSession(w http.ResponseWriter, r *http.Req
 }
 
 // GetUserByUserID
-func (a *AuthRepository) GetUserNameByUserID(userID int) (name string, err error) {
+func (a *AuthRepository) GetUserByUserID(userID int) (*model.User, error) {
 	if userID == 0 {
-		return "", serror.ErrEmptyUserData
+		return nil, serror.ErrEmptyUserData
 	}
 
 	user := model.User{}
+	err := a.DB.SQLite.QueryRow("SELECT id, login, age, gender, name, surname, email, password_hash FROM users WHERE id=?", userID).Scan(
+		&user.Id, &user.Login, &user.Age, &user.Gender, &user.Name, &user.Surname, &user.Email, &user.PasswordHash)
 
-	err = a.DB.SQLite.QueryRow("SELECT name FROM users WHERE id=?", userID).Scan(&user.Name)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return user.Name, nil
+	return &user, nil
 }

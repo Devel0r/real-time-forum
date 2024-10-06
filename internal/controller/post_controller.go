@@ -13,14 +13,15 @@ import (
 	"github.com/Pruel/real-time-forum/pkg/sqlite"
 )
 
-type TemplateData struct {
-    Username   string
-    Categories []model.Category
+type TData struct {
+	Username   string
+	Categories []model.Category
 }
 
 type PostController struct {
-	Message  string
-	PostRepo *repository.PostRepository
+	message     string
+	isValidData bool
+	PostRepo    *repository.PostRepository
 }
 
 func NewPostController(db *sqlite.Database) *PostController {
@@ -33,66 +34,66 @@ func NewPostController(db *sqlite.Database) *PostController {
 func (m *Controller) CreatePage(w http.ResponseWriter, r *http.Request) {
 	tmp := template.Must(template.ParseFiles(GetTmpPath("post")))
 
-	
-	categories := &[]model.Category{}
-	categories, err := m.PostController.PostRepo.GetAllCategories(categories)
+	categories, err := m.PostController.PostRepo.GetAllCategories()
 	if err != nil {
-		fmt.Println("\n\nCategories: ", categories)
-		fmt.Println("\n\nError: ", err)
 		slog.Error(err.Error())
 		return
 	}
-	
-	// TODO:  Getting user for post 
-	userID, err := m.AuthController.Aeepo.GetUserByUsername(r)
+
+	userID, err := m.AuthController.ARepo.GetUserIDFromSession(w, r)
 	if err != nil {
 		slog.Warn(err.Error())
-		fmt.Printf("BRATAN, TI KONE4NO CRAZY Y TEBIA SOVSEM DON'T GET USER BY USER_NAME: %v", err) 
+		http.Redirect(w, r, "/", http.StatusForbidden)
+	}
+
+	user, err := m.AuthController.ARepo.GetUserByUserID(userID)
+	if err != nil {
+		slog.Warn(err.Error())
 		return
 	}
 
+	data := struct {
+		User       *model.User
+		Categories *[]model.Category
+	}{
+		User:       user,
+		Categories: &categories,
+	}
 
-	// TODO: Сюда заебеним категории, ok
-	// data := struct {
-	// 	User user.ID 
-	// 	Categories categories,
-	// }
-		
 	if err := tmp.Execute(w, data); err != nil {
 		slog.Error(err.Error())
 		return
 	}
-
 }
 
 // func CreatePost, HTTP Method POST -> Create
 func (p *PostController) Create(w http.ResponseWriter, r *http.Request) {
-	validData := true
+	p.isValidData = true
 
 	// 1. recieve data from front-end
 	title := r.FormValue("post-title")
 	content := r.FormValue("post-content")
 	category := r.FormValue("post-category")
+
 	// 2. validation
 	if err := ValidatePostData(title, content); err != nil {
 		slog.Warn("empty content field")
-		
-		validData = false
-		return
+		p.isValidData = false
 	}
 
 	// 3. requirments
 	userId, err := p.PostRepo.GetUserIdFromSession(r)
 	if err != nil {
 		slog.Error(err.Error())
-		slog.Info("Failed to get user id from session") 
-		
-		validData = false
+		slog.Info("Failed to get user id from session")
+		p.isValidData = false
+		http.Redirect(w, r, "/sign-in", http.StatusUnauthorized)
+		return
 	}
 
-	if !validData {
-		p.CreatePage(w, r)
+	if !p.isValidData {
 		slog.Warn("redirected user to create page")
+		http.Redirect(w, r, "/create-posts", http.StatusBadRequest)
 		return
 	}
 
@@ -162,8 +163,6 @@ func (p *PostController) Delete(w http.ResponseWriter, r *http.Request) {
 	slog.Info("Post with ID: %d, deleted by user:%d\n")
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
-
-func (p *PostRepository) GetPage()
 
 func ValidatePostData(title, content string) error {
 	if title == "" && content == "" {
