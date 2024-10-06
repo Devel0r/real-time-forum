@@ -32,4 +32,7 @@ var (
 
 	// Comment errors
 	ErrEmptyCommentData = errors.New("error, empty comment data")
+
+	// Categories errors
+	ErrEmptyCategoryData = errors.New("error, empty category data")
 )
