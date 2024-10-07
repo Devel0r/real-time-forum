@@ -6,8 +6,12 @@ import (
 	"net/http"
 )
 
+
+
 // WSChatController
 type WsChatController struct {
+	Hub *ChatHub
+	// WsChatRepo *repository.WsChatRepository
 }
 
 // NewWSChatController constructor
