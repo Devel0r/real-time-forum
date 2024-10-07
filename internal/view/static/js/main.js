@@ -1,16 +1,14 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const profile = document.querySelector('.profile');
-    const dropdownMenu = document.querySelector('.dropdown-menu');
+// Функция для переключения видимости выпадающего меню
+function toggleDropdown() {
+    const dropdown = document.getElementById('dropdown-menu');
+    dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
+}
 
-    profile.addEventListener('click', function(e) {
-        e.stopPropagation();
-        dropdownMenu.classList.toggle('show');
-    });
-
-    // Закрытие выпадающего меню при клике вне его
-    document.addEventListener('click', function(e) {
-        if (!profile.contains(e.target)) {
-            dropdownMenu.classList.remove('show');
-        }
-    });
-});
+// Закрытие выпадающего меню при клике вне его
+window.onclick = function(event) {
+    const profileContainer = document.querySelector('.profile-container');
+    const dropdown = document.getElementById('dropdown-menu');
+    if (!profileContainer.contains(event.target) && !dropdown.contains(event.target)) {
+        dropdown.style.display = 'none';
+    }
+};

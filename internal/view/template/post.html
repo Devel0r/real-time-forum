@@ -12,6 +12,36 @@
 </head>
 <body>
     <div class="container">
+
+        <header class="header">
+            <!-- Левая часть: Логотип -->
+            <div class="logo">
+                <a href="/">
+                    <img src="/static/img/logo.png" alt="Logo" class="logo-image">
+                </a>
+            </div>
+            <!-- Правая часть: Меню пользователя -->
+            <div class="user-menu">
+                <div class="chat">
+                    <a href="/chat">
+                        <img src="/static/img/chat.png" alt="Chat" class="icon-plus">
+                    </a>
+                </div>
+                <div class="profile">
+                    <div class="profile-container" onclick="toggleDropdown()">
+                        <div class="profile-icon">
+                            <img src="/static/img/profile.png" alt="User Avatar">
+                        </div>
+                        <span class="user-name">{{.User.Login}}</span>
+                    </div>
+                    <!-- Выпадающее меню -->
+                    <div class="dropdown-menu" id="dropdown-menu">
+                        <button class="dropdown-item" onclick="window.location.href='/sign-out'">Sign Out</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
         <h2>Create a New Post</h2>
         <form id="create-post-form" action="/posts" method="POST">
             <label for="post-title">Title</label>
@@ -31,5 +61,6 @@
             <button type="submit">Among ASS</button>
         </form>
     </div>
+    <script src="/static/js/main.js"></script>
 </body>
 </html>
