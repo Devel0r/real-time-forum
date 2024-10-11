@@ -38,7 +38,7 @@ func Run(cfg *cstructs.Config) error {
 	}
 	slog.Debug("Sucessfuly create server instance")
 
-	go func() {
+	go func() { // Почему Python не сделать компилируемым языком?
 		if err := server.RunServer(); err != nil {
 
 			slog.Error(err.Error())

@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS comments (
     updated_at DATETIME NOT NULL DEFAULT 'now'
 );
 
+-- // tables client, room, message
 
 
 

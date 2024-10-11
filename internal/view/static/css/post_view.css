@@ -1,0 +1,305 @@
+/* Общие стили */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #121212;
+    color: #f0f0f0;
+}
+
+/* Container */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #333;
+}
+
+/* Левая часть: Логотип */
+.logo {
+    display: flex;
+    align-items: center;
+}
+
+/* Правая часть: Меню пользователя */
+.user-menu {
+    display: flex;
+    align-items: center;
+}
+
+/* Иконка создания поста */
+.create-post {
+    margin-right: 20px;
+    cursor: pointer;
+}
+
+/* Профиль пользователя */
+.profile {
+    position: relative;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.profile-container {
+    display: flex;
+    align-items: center;
+    padding: 5px 10px; /* Добавляем немного отступов */
+    border: 1px solid #444; /* Рамка вокруг профиля */
+    border-radius: 5px; /* Скругляем углы */
+    background-color: #222; /* Фон рамки */
+}
+
+.user-name {
+    margin-left: 10px; /* Отступ между иконкой и именем */
+    color: #f0f0f0;
+}
+
+/* Выпадающее меню */
+.dropdown-menu {
+    position: absolute;
+    top: 60px; /* Отступ вниз для расположения под профилем */
+    right: 0;
+    background-color: #222;
+    padding: 10px;
+    border-radius: 8px;
+    display: none; /* Скрыто по умолчанию */
+    flex-direction: column;
+    z-index: 1;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dropdown-item {
+    background: none;
+    border: none;
+    color: #f0f0f0;
+    padding: 10px;
+    text-align: left;
+    cursor: pointer;
+    font-size: 16px;
+    width: 100%;
+    transition: background 0.3s;
+}
+
+.dropdown-item:hover {
+    background-color: #333;
+}
+
+/* Основной контент */
+.content {
+    display: flex;
+    margin-top: 40px;
+    gap: 20px; /* Добавляем промежуток между основным контентом и сайдбаром */
+}
+
+/* Feed (Основная часть с постом и комментариями) */
+.feed {
+    flex: 3;
+    /* Убираем margin-right, так как используем gap */
+}
+
+/* Улучшенная стилизация поста */
+.post {
+    background-color: #1e1e1e;
+    color: #f0f0f0;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    margin-bottom: 30px;
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden; /* Для анимации */
+}
+
+/* Добавляем градиент к фону поста */
+.post {
+    background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+}
+
+/* Категория поста */
+.post-category {
+    font-size: 14px;
+    color: #ffcc00; /* Контрастный цвет для категории */
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Заголовок поста */
+.post-title {
+    font-size: 32px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #fff;
+}
+
+/* Содержимое поста */
+.post-content {
+    font-size: 18px;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+/* Детали поста: автор и дата */
+.post-details {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.post-author,
+.post-date {
+    font-size: 14px;
+    color: #bbb;
+}
+
+/* Кнопка удаления поста */
+.delete-post-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #ff4d4d;
+    color: #fff;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+.delete-post-button:hover {
+    background-color: #ff1a1a;
+    border-top: 1px solid #444;
+}
+
+/* Секция комментариев */
+.comments-section {
+    margin-top: 40px;
+}
+
+.comments-section h4 {
+    font-size: 24px;
+    
+    margin-bottom: 20px;
+    
+}
+
+/* Индивидуальный комментарий */
+.comment {
+    background-color: #2a2a2a;
+    color: #f0f0f0;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden; /* Для анимации */
+}
+
+.comment-author,
+.comment-date {
+    font-size: 14px;
+    color: #bbb;
+}
+
+.comment-content {
+    font-size: 16px;
+    margin-top: 10px;
+    line-height: 1.6;
+}
+
+/* Кнопка удаления комментария */
+.delete-comment-button {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: #ff4d4d;
+    color: #fff;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+    margin-top: 10px;
+}
+
+.delete-comment-button:hover {
+    background-color: #ff1a1a;
+}
+
+/* Форма добавления комментария */
+#create-comment {
+    background-color: #fff; /* Белый фон */
+    color: #000;
+    padding: 30px;
+    border-radius: 12px;
+    box-sizing: border-box;
+    margin-top: 40px;
+}
+
+#create-comment label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+#create-comment textarea {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    resize: vertical;
+    background-color: #f9f9f9;
+}
+
+#create-comment textarea::placeholder {
+    color: #888;
+}
+
+#create-comment button {
+    width: 100%;
+    padding: 15px;
+    background-color: #000;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#create-comment button:hover {
+    background-color: #333;
+}
+
+/* Анимация ripple для соответствия страницам входа и регистрации */
+/* Новая анимация при фокусе */
+input:focus,
+textarea:focus,
+button:focus,
+.delete-post-button:focus,
+.delete-comment-button:focus {
+    outline: none;
+    border-color: #000000;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s ease;
+}
+
+@keyframes ripple-animation {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.3);
+    }
+    100% {
+        box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+    }
+}

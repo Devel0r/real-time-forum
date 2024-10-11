@@ -2,13 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="/static/css/index.css">
+    <title>{{.Title}}</title>
+    <link rel="stylesheet" type="text/css" href="/static/css/post_view.css">
     <link rel="icon" type="image/png" href="/static/favicon/favicon16.png">
     <link rel="icon" type="image/png" href="/static/favicon/favicon32.png">
     <link rel="icon" type="image/png" href="/static/favicon/favicon96.png">
-    <title>{{.Title}}</title>
 </head>
 <body>
 <div class="container">
@@ -51,48 +49,51 @@
         </header>
     <!-- Content -->
     <div class="content">
-         <!-- Left Sidebar (Category Selector) -->
-        <main class="feed">
-            <div class="post">
-                <div class="post-category">{{ .CategoryTitle }}</div>
-                <h2 class="post-title">{{ .Title }}</h2>
-                <p class="post-content">{{ .Content }}</p>
-                <h4 class="post-comments">Author: {{.Author}}</h4>
-                <h5 class="post-comments">Date Time: {{.CreatedAt}}</h5>
-                <!-- <h5 class="post-comments">Date Time: {{.CreatedAt.Format "2000-10-13 3:03:03"}}</h5> -->
-                <a href="/posts-delete?post_id={{.Id}}">
-                    <h3 style="color:crimson;">Delete Post</h3>
-                </a>
-                <br><h4 style="color:aqua; padding: 4px;">Comments ({{.CountOfPostComments}})</h4>
-                {{ range .PostComments}}
-                    <div class="comment">
-                        <h4 class="post-comments">Author: {{.Author}}</h4>
-                        <p class="post-content">{{ .Content }}</p>
-                        <h5 class="post-comments">Date Time: {{.CreatedAt}}</h5><br>
-                        <a href="/comments-delete?comment_id={{.Id}}">
-                            <h4 style="color: red;">Delete Comment</h4>
-                        </a>
-                    </div>
+         <!-- Основная часть (пост и комментарии) -->
+        <!-- Основной контент -->
+<main class="feed">
+    <div class="post">
+        <div class="post-category">{{ .CategoryTitle }}</div>
+        <h2 class="post-title">{{ .Title }}</h2>
+        <div class="post-content">{{ .Content }}</div>
+        <div class="post-details">
+            <span class="post-author">Author: {{.Author}}</span>
+            <span class="post-date">Date: {{.CreatedAt}}</span>
+        </div>
+        <a href="/posts-delete?post_id={{.Id}}" class="delete-post-button">Delete Post</a>
 
-                {{else}}
-                    <p>No Comments</p>
-                {{end}}
-                <form id="create-comment" action="/comments" method="POST">
-                    <input type="hidden" value="{{.Id}}" id="comment-post_id" name="comment-post_id">
-                    <label for="comment-content"><b>A new comment</b></label><br>
-                    <textarea id="comment-content" name="comment-content" rows="5" placeholder="Enter your comment content" required></textarea>
-                    <br><button class="comment-button" type="submit">Add comment</button>
-                </form>
-            </div>
-        </main>
-        <!-- Right Sidebar (Users Online) -->
+        <div class="comments-section">
+            <h4>Comments ({{.CountOfPostComments}})</h4>
+            {{ range .PostComments}}
+                <div class="comment">
+                    <div class="comment-header">
+                        <span class="comment-author">Author: {{.Author}}</span>
+                        <span class="comment-date">Date: {{.CreatedAt}}</span>
+                    </div>
+                    <div class="comment-content">{{ .Content }}</div>
+                    <a href="/comments-delete?comment_id={{.Id}}" class="delete-comment-button">Delete Comment</a>
+                </div>
+            {{else}}
+                <p>No Comments</p>
+            {{end}}
+        </div>
+
+        <form id="create-comment" action="/comments" method="POST">
+            <input type="hidden" value="{{.Id}}" id="comment-post_id" name="comment-post_id">
+            <label for="comment-content">Add a new comment</label>
+            <textarea id="comment-content" name="comment-content" rows="5" placeholder="Enter your comment content" required></textarea>
+            <button type="submit">Among ASS</button>
+        </form>
+    </div>
+</main>
+        <!-- Правый сайдбар (Пользователи онлайн) -->
         <aside class="users-sidebar">
             <div class="user">
                 <div class="user-avatar"></div>
                 <span class="user-name">{{.CurrentUser}}</span>
                 <span class="status-dot online"></span>
             </div>
-            <!-- Add more users here -->
+            <!-- Добавьте других пользователей здесь -->
         </aside>
     </div>
 </div>

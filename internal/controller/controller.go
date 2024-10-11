@@ -39,7 +39,7 @@ func New(db *sqlite.Database) *Controller {
 		AuthController:    NewAuthController(db),
 		PostController:    NewPostController(db),
 		CommentController: NewCommentController(db),
-		WsChatController:  NewWSChatController(),
+		WsChatController:  NewWSChatController(db),
 	}
 }
 
