@@ -1,4 +1,4 @@
-package controller
+package wschat
 
 import (
 	"fmt"
@@ -6,8 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Pruel/real-time-forum/internal/model/repository"
-	"github.com/Pruel/real-time-forum/pkg/sqlite"
 	"github.com/gofrs/uuid"
 	"github.com/gorilla/websocket"
 )
@@ -20,7 +18,6 @@ type ChatHub struct {
 	Unregister  chan *Client
 	Broadcast   chan *Message
 	Mu          *sync.RWMutex
-	ChatRepo    *repository.ChatRepository // TODO: ChatRpepository
 }
 
 // chathub or room
@@ -48,7 +45,20 @@ type Message struct {
 	IsRead      bool
 }
 
-func NewChat(db *sqlite.Database) *ChatHub {
+// SimpleClient, SimpleRoom client struct clone without unsupported fields (json)
+type SClient struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
+	RoomID   string `json:"room_id"`
+}
+
+type SRoom struct {
+	ID      string             `json:"id"`
+	Name    string             `json:"name"`
+	Clients map[string]SClient `json:"clients"`
+}
+
+func NewChat() *ChatHub {
 	return &ChatHub{
 		Rooms:      make(map[string]*Room, 10),
 		Clients:    make(map[string]*Client, 2),
@@ -56,7 +66,6 @@ func NewChat(db *sqlite.Database) *ChatHub {
 		Unregister: make(chan *Client),
 		Broadcast:  make(chan *Message, 10),
 		Mu:         &sync.RWMutex{},
-		ChatRepo:   repository.NewChatReposotory(db),
 	}
 }
 

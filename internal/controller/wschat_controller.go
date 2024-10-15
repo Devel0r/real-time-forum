@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	wschat "github.com/Pruel/real-time-forum/internal/controller/ws_chat"
 	"github.com/Pruel/real-time-forum/internal/model/repository"
 	"github.com/Pruel/real-time-forum/pkg/sqlite"
 	"github.com/gorilla/websocket"
@@ -13,15 +14,17 @@ import (
 
 // WSChatController
 type WsChatController struct {
-	Hub   *ChatHub
+	Hub   *wschat.ChatHub
 	ARepo *repository.AuthRepository
-	// WsChatRepo *repository.WsChatRepository
+	ChatRepo *repository.ChatRepository
 }
 
 // NewWSChatController constructor
 func NewWSChatController(db *sqlite.Database) *WsChatController {
 	return &WsChatController{
+		Hub:   wschat.NewChat(),
 		ARepo: repository.NewAuthRepository(db),
+		ChatRepo: repository.NewChatReposotory(db),
 	}
 }
 
@@ -59,6 +62,7 @@ func (ws *Controller) ChatPage(w http.ResponseWriter, r *http.Request) {
 // TODO: Group Chats
 // CreateRoom | CreateGroupChat
 func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
+
 	// create a new pv chat frontend -> event  js getElementByID -> onclick ->  method new websocket-> get ws://localhost:80/roomID/3/?usernameA=Janika&usernameB=Daniil
 	upgrader := websocket.Upgrader{
 		WriteBufferSize: 1024, // 1024 byte = 1 mb // Хорошая фича
@@ -113,30 +117,30 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create a new instance of the room
-	komnata := &Room{
-		ID:      GetUUID(),
+	komnata := &wschat.Room{
+		ID:      wschat.GetUUID(),
 		Name:    room,
-		Clients: make(map[string]*Client),
+		Clients: make(map[string]*wschat.Client),
 	}
 
 	// user
 	// pvchat | userA (creator) + userB, invite
 	bibaID := strconv.Itoa(user.Id)
-	Biba := Client{
+	Biba := wschat.Client{
 		ID:       bibaID,
 		Username: user.Login,
 		RoomID:   komnata.ID,
 		Conn:     conn,
-		Message:  make(chan *Message, 10),
+		Message:  make(chan *wschat.Message, 10),
 	}
 
 	bobaID := strconv.Itoa(inUser.Id)
-	Boba := Client{
+	Boba := wschat.Client{
 		ID:       bobaID,
 		Username: inUser.Login,
 		RoomID:   komnata.ID,
 		Conn:     conn,
-		Message:  make(chan *Message, 10),
+		Message:  make(chan *wschat.Message, 10),
 	}
 
 	komnata.Clients[Biba.ID] = &Biba
@@ -146,11 +150,33 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	ws.Hub.Rooms[komnata.ID] = komnata
 
 	// save this room into database
-	// TODO: save into database
+	room, err = ws.ChatRepo.SavePvChat()
+	if err != nil {
+		slog.Error(err.Error())
+		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return
+	}
 
 	// send this room to user, json
+	aroom := wschat.SRoom{
+		ID:      komnata.ID,
+		Name:    komnata.Name,
+		Clients: make(map[string]wschat.SClient),
+	}
 
-	if err := conn.WriteJSON(komnata); err != nil {
+	aroom.Clients[bibaID] = wschat.SClient{
+		ID:       bibaID,
+		Username: Biba.Username,
+		RoomID:   komnata.ID,
+	}
+
+	aroom.Clients[bobaID] = wschat.SClient{
+		ID:       bobaID,
+		Username: Boba.Username,
+		RoomID:   komnata.ID,
+	}
+
+	if err := conn.WriteJSON(aroom); err != nil {
 		slog.Error(err.Error())
 		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return
