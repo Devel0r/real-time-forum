@@ -1,3 +1,4 @@
+-- SQLBook: Code
 BEGIN TRANSACTION;
 
 CREATE TABLE users ( 
@@ -44,12 +45,26 @@ CREATE TABLE IF NOT EXISTS comments (
     updated_at DATETIME NOT NULL DEFAULT 'now'
 );
 
--- // tables client, room, message
+CREATE TABLE IF NOT EXISTS rooms (
+    id VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    clients_id TEXT NOT NULL
+);
 
+CREATE TABLE IF NOT EXISTS clients (
+    id VARCHAR(255) NOT NULL,
+    username VARCHAR(255) NOT NULL,
+    room_id TEXT NOT NULL
+);
 
-
--- What needed to do: 
-    -- private_messages
-
+CREATE TABLE IF NOT EXISTS messages (
+    id VARCHAR(255) NOT NULL,
+    username VARCHAR(255) NOT NULL,
+    room_id VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT 'now',
+    is_delivered BOOLEAN,
+    is_read BOOLEAN
+);
 
 COMMIT; 

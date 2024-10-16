@@ -45,7 +45,7 @@ func Run(cfg *cstructs.Config) error {
 		}
 	}()
 
-	fmt.Printf("\nReal Time Forum started: http://%s:%s \n\tFor stoping press Ctrl + C\n", cfg.HTTPServer.Host, cfg.HTTPServer.Port)
+	fmt.Printf("\nReal Time Forum started: http://%s:%s/sign-in \n\tFor stoping press Ctrl + C\n", cfg.HTTPServer.Host, cfg.HTTPServer.Port)
 
 	// TODO: remove after, Client
 

@@ -6,24 +6,25 @@ import (
 	"net/http"
 	"strconv"
 
-	wschat "github.com/Pruel/real-time-forum/internal/controller/ws_chat"
+	"github.com/gorilla/websocket"
+
+	wschat "github.com/Pruel/real-time-forum/internal/controller/wschat"
 	"github.com/Pruel/real-time-forum/internal/model/repository"
 	"github.com/Pruel/real-time-forum/pkg/sqlite"
-	"github.com/gorilla/websocket"
 )
 
 // WSChatController
 type WsChatController struct {
-	Hub   *wschat.ChatHub
-	ARepo *repository.AuthRepository
+	Hub      *wschat.ChatHub
+	ARepo    *repository.AuthRepository
 	ChatRepo *repository.ChatRepository
 }
 
 // NewWSChatController constructor
 func NewWSChatController(db *sqlite.Database) *WsChatController {
 	return &WsChatController{
-		Hub:   wschat.NewChat(),
-		ARepo: repository.NewAuthRepository(db),
+		Hub:      wschat.NewChat(),
+		ARepo:    repository.NewAuthRepository(db),
 		ChatRepo: repository.NewChatReposotory(db),
 	}
 }
@@ -149,14 +150,6 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	// add this room into rooms of the chat hub
 	ws.Hub.Rooms[komnata.ID] = komnata
 
-	// save this room into database
-	room, err = ws.ChatRepo.SavePvChat()
-	if err != nil {
-		slog.Error(err.Error())
-		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
-		return
-	}
-
 	// send this room to user, json
 	aroom := wschat.SRoom{
 		ID:      komnata.ID,
@@ -175,6 +168,15 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		Username: Boba.Username,
 		RoomID:   komnata.ID,
 	}
+
+	// save this room into database
+	roomID, err := ws.ChatRepo.SaveRoom(&aroom)
+	if err != nil {
+		slog.Error(err.Error())
+		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return
+	}
+	slog.Info("the room successful saved into database", "room_id", roomID)
 
 	if err := conn.WriteJSON(aroom); err != nil {
 		slog.Error(err.Error())

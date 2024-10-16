@@ -1,6 +1,12 @@
 package repository
 
-import "github.com/Pruel/real-time-forum/pkg/sqlite"
+import (
+	"encoding/json"
+	"errors"
+
+	"github.com/Pruel/real-time-forum/internal/controller/wschat"
+	"github.com/Pruel/real-time-forum/pkg/sqlite"
+)
 
 // Chat struct
 type ChatRepository struct {
@@ -14,14 +20,37 @@ func NewChatReposotory(db *sqlite.Database) *ChatRepository {
 	}
 }
 
-// methods
-func (c *ChatRepository) AmongsAss() {
+// SaveRoom
+func (c *ChatRepository) SaveRoom(room *wschat.SRoom) (id string, err error) {
+	if room == nil {
+		return "", errors.New("error, nil struct pointer")
+	}
 
+	ids := []string{}
+
+	for _, cl := range room.Clients {
+		ids = append(ids, cl.ID)
+	}
+
+	data, err := json.Marshal(ids)
+	if err != nil {
+		return "", err
+	}
+
+	_, err = c.DB.SQLite.Exec("INSERT INTO rooms(id, name, clients_id) values(?, ?, ?)", room.ID,
+		room.Name, string(data))
+	if err != nil {
+		return "", err
+	}
+
+	return room.ID, nil
 }
 
-// SavePvChat
+// GetRoomByID
 
-// DeletePvChat
+// GetRooms
+
+// DeleteRoomByID
 
 // GetAllChatUsers
 
