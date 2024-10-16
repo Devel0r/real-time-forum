@@ -35,4 +35,7 @@ var (
 
 	// Categories errors
 	ErrEmptyCategoryData = errors.New("error, empty category data")
+
+	// Chat errors
+	ErrEmptyRoomID = errors.New("error, empty room ID data")
 )

@@ -56,7 +56,7 @@
         </div>
 
         <!-- Центральная область: переписка -->
-        <div class="chat-content">
+        <div class="chat-content" id="chat-content">
             <div class="messages">
                 <!-- Здесь отображаются сообщения -->
                 <div class="message incoming">
@@ -99,6 +99,46 @@
         if (!dropdownMenu.contains(event.target) && !profileContainer.contains(event.target)) {
             dropdownMenu.style.display = 'none';
         }
+    }
+
+    // chat logic scripts
+    const socket = new WebSocket("ws://localhost:8081/ws/join-room?room=amongAss&username=user2")
+
+    // dom.Element message.Input, chat-content, send-button
+    const messageInput = document.getElementById('message-input')
+    const chatMessages = document.getElementById('chat-content')
+    const sendButton = document.getElemmentById('send-button')
+
+    // socket.onmessage
+    socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            // TODO: bug: fix this, implementing on backend
+            displayMessage(data.content, data.from === "username" ? "user" : "other");
+        };
+
+    // message button event listener
+    sendButton.addEventListener('click', function() {
+        const message = messageInput.value;
+        if (message.trim() !== "") {
+            socket.send(JSON.stringify({ content: message }));
+            displayMessage(message, "user");
+            messageInput.value = '';
+        }
+    });
+
+    // input message button click
+    messageInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            sendButton.click();
+        }
+    });
+
+    function displayMessage(message, type) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message incoming', type);
+        messageDiv.textContent = message;
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
     }
 </script>
 </body>

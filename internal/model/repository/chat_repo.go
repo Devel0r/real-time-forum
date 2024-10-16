@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/Pruel/real-time-forum/internal/controller/wschat"
+	"github.com/Pruel/real-time-forum/pkg/serror"
 	"github.com/Pruel/real-time-forum/pkg/sqlite"
 )
 
@@ -47,6 +48,18 @@ func (c *ChatRepository) SaveRoom(room *wschat.SRoom) (id string, err error) {
 }
 
 // GetRoomByID
+func (c *ChatRepository) GetRoomID(id string) (roomID string, err error) {
+	if id == "" {
+		return "", serror.ErrEmptyRoomID
+	}
+
+	err = c.DB.SQLite.QueryRow("SELECT id, FROM rooms WHERE id=?", id).Scan(&roomID)
+	if err != nil {
+		return "", serror.ErrEmptyRoomID
+	}
+
+	return roomID, nil
+}
 
 // GetRooms
 

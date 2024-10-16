@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -186,7 +187,85 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 }
 
 // JoinRoom | JoinGroupChat
-func (c *WsChatController) JoinRoom() {
+func (c *WsChatController) JoinRoom(w http.ResponseWriter, r *http.Request) {
+	//1. create a new upgrader instance, make upgrade to ws
+	upgrader := websocket.Upgrader{
+		WriteBufferSize: 1024, // 1024 bytes = 1 mb
+		ReadBufferSize:  1024,
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
+
+	_, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		if websocket.IsCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+			slog.Error(err.Error())
+			ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+			return
+		}
+	}
+
+	// ws://localhost:8081/ws/join-room?room_id=?&username=daniil
+	//2. recieve user data, after validating this data
+	roomID := r.URL.Query().Get("room_id")
+	username := r.URL.Query().Get("username")
+
+	if roomID == "" || username == "" {
+		slog.Error(errors.New("error, empty joining room data").Error())
+		ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+		return
+	}
+
+	//3. compare this room_id with room_id from database, ws.ChatHub also username, user_id
+	// TODO: GetRoomByID in chatRepo
+	roomIDDatabase, err := c.ChatRepo.GetRoomID(roomID)
+	if err != nil {
+		slog.Error(err.Error())
+		ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+		return
+	}
+
+	if roomIDDatabase != roomID {
+		slog.Error(errors.New("error, wrong room id").Error())
+		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return
+	}
+
+	userID, err := c.ARepo.GetUserIDFromSession(w, r)
+	if err != nil {
+		slog.Error(err.Error())
+		ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+		return
+	}
+
+	user, err := c.ARepo.GetUserByUserID(userID)
+	if err != nil {
+		slog.Error(err.Error())
+		ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+		return
+	}
+
+	if user.Login != username {
+		slog.Error(errors.New("error, wrong user in chat").Error())
+		ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+		return
+	}
+
+	//4. if invited user not exists in database and chat service pool, register this user in chat pool
+	// and save this user into database
+
+	//5. create a new message for greating this user in chat
+
+	//6. broadcast this message in this room,
+
+	//7. add ws connection, client.conn
+
+	//8. run client's write and read methods in separate goroutines
+
+	//9. send to front-end ws info about this operations
+
+	// js-> ws -> getRooms >all messages, users and other info
 
 }
 
