@@ -56,7 +56,7 @@
         </div>
 
         <!-- Центральная область: переписка -->
-        <div class="chat-content" id="chat-content">
+        <div class="chat-content" id="chat-messages">
             <div class="messages">
                 <!-- Здесь отображаются сообщения -->
                 <div class="message incoming">
@@ -139,6 +139,11 @@
         messageDiv.textContent = message;
         chatMessages.appendChild(messageDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
+
+        scrollws = new WebSocket("ws://localhost:8081/ws/chat/get-more-messages")
+
+        
+        
     }
 </script>
 </body>

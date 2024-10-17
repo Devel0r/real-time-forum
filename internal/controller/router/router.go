@@ -79,7 +79,7 @@ func (r *Router) InitRouter() {
 	r.Mux.HandleFunc("GET /chat", r.Ctl.ChatPage)
 	// websocket
 	r.Mux.HandleFunc("GET /ws/create-pvchat", r.Ctl.WsChatController.CreateRoom)
-	// r.Mux.HandleFunc("GET /ws/join-pvchat", r.Ctl.WsChatController.)
+	r.Mux.HandleFunc("GET /ws/join-pvchat", r.Ctl.WsChatController.JoinRoom)
 
 	// get all chats with last messages by user_id
 	// r.Mux.HandleFunc("GET /ws/chats/get-all", r.Ctl.WsChatController.ChatPage)

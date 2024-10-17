@@ -1,11 +1,15 @@
 package controller
 
 import (
+	"database/sql"
 	"errors"
+	"fmt"
 	"html/template"
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
 
@@ -94,7 +98,7 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	idstr := r.URL.Query().Get("userID")
 	userID, _ := strconv.Atoi(idstr)
 
-	// ws://localhost:8081/ws/create-pvchat?room=amongASS&userID=1&invited_username=simpleTest
+	// ws://localhost:8081/ws/create-pvchat?room=amongASS&userID=2&invited_username=user1
 
 	// params
 	// userID, err := ws.ARepo.GetUserIDFromSession(w, r)
@@ -158,17 +162,19 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		Clients: make(map[string]wschat.SClient),
 	}
 
-	aroom.Clients[bibaID] = wschat.SClient{
+	biba := wschat.SClient{
 		ID:       bibaID,
 		Username: Biba.Username,
 		RoomID:   komnata.ID,
 	}
+	aroom.Clients[bibaID] = biba
 
-	aroom.Clients[bobaID] = wschat.SClient{
+	boba := wschat.SClient{
 		ID:       bobaID,
 		Username: Boba.Username,
 		RoomID:   komnata.ID,
 	}
+	aroom.Clients[bobaID] = boba
 
 	// save this room into database
 	roomID, err := ws.ChatRepo.SaveRoom(&aroom)
@@ -178,6 +184,14 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	slog.Info("the room successful saved into database", "room_id", roomID)
+
+	clIDs, err := ws.ChatRepo.SaveClients(&biba, &boba)
+	if err != nil {
+		slog.Error(err.Error())
+		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return
+	}
+	slog.Info("clients successful saved into dabase", "clients_ids", strings.Join(clIDs, ", "))
 
 	if err := conn.WriteJSON(aroom); err != nil {
 		slog.Error(err.Error())
@@ -197,7 +211,7 @@ func (c *WsChatController) JoinRoom(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	_, err := upgrader.Upgrade(w, r, nil)
+	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		if websocket.IsCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 			slog.Error(err.Error())
@@ -218,55 +232,112 @@ func (c *WsChatController) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//3. compare this room_id with room_id from database, ws.ChatHub also username, user_id
-	// TODO: GetRoomByID in chatRepo
-	roomIDDatabase, err := c.ChatRepo.GetRoomID(roomID)
+	droom, err := c.ChatRepo.GetRoomID(roomID)
 	if err != nil {
 		slog.Error(err.Error())
 		ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 		return
 	}
 
-	if roomIDDatabase != roomID {
+	if droom.ID != roomID {
 		slog.Error(errors.New("error, wrong room id").Error())
 		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return
 	}
 
-	userID, err := c.ARepo.GetUserIDFromSession(w, r)
-	if err != nil {
-		slog.Error(err.Error())
-		ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
-		return
-	}
+	// TODO: set session coockie
 
-	user, err := c.ARepo.GetUserByUserID(userID)
-	if err != nil {
-		slog.Error(err.Error())
-		ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
-		return
-	}
+	// TODO: fix this
+	// userID, err := c.ARepo.GetUserIDFromSession(w, r)
+	// if err != nil {
+	// 	slog.Error(err.Error())
+	// 	ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+	// 	return
+	// }
 
-	if user.Login != username {
-		slog.Error(errors.New("error, wrong user in chat").Error())
-		ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
-		return
-	}
+	// user, err := c.ARepo.GetUserByUsername(username)
+	// if err != nil {
+	// 	slog.Error(err.Error())
+	// 	ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+	// 	return
+	// }
+
+	// // TODO: ref:
+	// if username != username {
+	// 	slog.Error(errors.New("error, wrong user in chat").Error())
+	// 	ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+	// 	return
+	// }
 
 	//4. if invited user not exists in database and chat service pool, register this user in chat pool
 	// and save this user into database
+	Client := wschat.Client{
+		Conn:    conn,
+		Message: make(chan *wschat.Message, 10),
+	}
+
+	dclient, err := c.ChatRepo.GetClientByUsername(username)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			cl := wschat.SClient{
+				ID:       wschat.GetUUID(),
+				Username: username,
+				RoomID:   roomID,
+			}
+
+			Client.ID = cl.ID
+			Client.Username = cl.Username
+			Client.RoomID = cl.RoomID
+
+			id, err := c.ChatRepo.SaveClients(&cl)
+			if err != nil {
+				slog.Error(errors.New("error, wrong user in chat").Error(), "err", err.Error())
+				ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+				return
+			}
+			slog.Info("a new joining the chat client successful saved into db", "client_id", strings.Join(id, ", "))
+		}
+		slog.Error(err.Error())
+		ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+		return
+	}
+	slog.Info("the client joining the chat", "username", dclient.Username)
+
+	if dclient.Username != "" {
+		Client.ID = dclient.ID
+		Client.Username = dclient.Username
+		Client.RoomID = dclient.RoomID
+	}
 
 	//5. create a new message for greating this user in chat
+	gMsg := wschat.Message{
+		ID:        wschat.GetUUID(),
+		From:      Client.Username,
+		RoomID:    roomID,
+		Content:   fmt.Sprintf("the %s join the chat", Client.Username),
+		CreatedAt: time.Now(),
+	}
 
-	//6. broadcast this message in this room,
+	_, err = c.ChatRepo.SaveMessage(&gMsg)
+	if err != nil {
+		slog.Error(err.Error())
+		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+	}
+
+	//9. send to front-end ws info about this operations
+	Client.Conn.WriteJSON(gMsg)
+
+	//6. broadcast this message in this room
+	c.Hub.Broadcast <- &gMsg
+	c.Hub.Register <- &Client
 
 	//7. add ws connection, client.conn
 
 	//8. run client's write and read methods in separate goroutines
-
-	//9. send to front-end ws info about this operations
+	go Client.WriteMessage()
+	Client.ReadMessage(c.Hub)
 
 	// js-> ws -> getRooms >all messages, users and other info
-
 }
 
 // GetRooms | GetGroupChats
