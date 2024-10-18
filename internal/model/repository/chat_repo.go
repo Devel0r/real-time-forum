@@ -35,7 +35,7 @@ func (c *ChatRepository) SaveRoom(room *wschat.SRoom) (id string, err error) {
 	}
 
 	if err := c.DB.SQLite.QueryRow("SELECT id FROM rooms WHERE id=?", room.ID).Scan(&id); err != nil {
-		return id, errors.New("error, room already exists in database")
+		return id, serror.ErrRoomAlreadyExists
 	}
 
 	_, err = c.DB.SQLite.Exec("INSERT INTO rooms(id, name, clients_id) values(?, ?, ?)", room.ID,
@@ -93,7 +93,7 @@ func (c *ChatRepository) SaveClients(clients ...*wschat.SClient) (clients_ids []
 		}
 
 		if id != "" {
-			slog.Warn(errors.New("error, clients by this id already exists into dabatase").Error())
+			slog.Warn(errors.New("warning, clients by this id already exists into dabatase").Error())
 			clients_ids = append(clients_ids, id)
 			continue
 		}

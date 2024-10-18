@@ -16,27 +16,27 @@ type ChatHub struct {
 	Clients     map[string]*Client
 	Register    chan *Client
 	Unregister  chan *Client
-	Broadcast   chan *Message
+	Broadcast   chan Message
 	Mu          *sync.RWMutex
 }
 
 // chathub or room
 type Room struct {
-	ID      string             `sql:"id" json:"id"`
+	ID      string             `sql:"id" json:"room_id"`
 	Name    string             `sql:"name" json:"name"`
 	Clients map[string]*Client `sql:"clients" json:"clients"`
 }
 
 type Client struct {
-	ID       string `json:"id"`
+	ID       string `json:"client_id"`
 	Username string `json:"username"`
 	RoomID   string `json:"room_id"`
 	Conn     *websocket.Conn
-	Message  chan *Message
+	Message  chan Message
 }
 
 type Message struct {
-	ID          string    `sql:"id" json:"id"`
+	ID          string    `sql:"id" json:"message_id"`
 	From        string    `sql:"from" json:"from"`
 	RoomID      string    `sql:"room_id" json:"room_id"`
 	Content     string    `sql:"content" json:"content"`
@@ -47,13 +47,13 @@ type Message struct {
 
 // SimpleClient, SimpleRoom client struct clone without unsupported fields (json)
 type SClient struct {
-	ID       string `json:"id"`
+	ID       string `json:"client_id"`
 	Username string `json:"username"`
 	RoomID   string `json:"room_id"`
 }
 
 type SRoom struct {
-	ID      string             `json:"id"`
+	ID      string             `json:"room_id"`
 	Name    string             `json:"name"`
 	Clients map[string]SClient `json:"clients"`
 }
@@ -64,7 +64,7 @@ func NewChat() *ChatHub {
 		Clients:    make(map[string]*Client, 2),
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
-		Broadcast:  make(chan *Message, 10),
+		Broadcast:  make(chan Message, 10),
 		Mu:         &sync.RWMutex{},
 	}
 }
@@ -74,25 +74,29 @@ func (h *ChatHub) Run() {
 	for {
 		select {
 		case cl := <-h.Register: // Client{ID: 12, RoomID: gophers, other:... }
-			// 1. проверяем наличие такого чата
+			// 1. check for exists this chat | room
+			slog.Debug(fmt.Sprintf("request for register the %s for the %s chat\n", cl.Username, cl.RoomID))
 			if _, ok := h.Rooms[cl.RoomID]; ok {
-				// 2. если такой чат есть, получаем его из мапы чатов для того чтобы добавить юзера
+				// 2. if this chat | room exists, select this chat for regisring this client on this chat
 				chat := h.Rooms[cl.RoomID]
+				slog.Debug("register channel, chat exists") // TODO: remove this log
 
-				// 3. добавляем юзера
+				// 3. add this client
 				if _, ok := chat.Clients[cl.ID]; !ok {
 					chat.Clients[cl.ID] = cl
+					slog.Info(fmt.Sprintf("the %s successful registered in the %s chat\n", cl.Username, cl.RoomID))
 				}
 			}
 		case cl := <-h.Unregister:
 			// 1. check chat exists
+			slog.Debug("request for unregister the %s from the %s\n", cl.Username, cl.RoomID)
 			if _, ok := h.Rooms[cl.RoomID]; ok {
 				// 2. if chat exists, check user exists in this chat room
 				if _, ok := h.Rooms[cl.RoomID].Clients[cl.ID]; ok { // [][]int{ []int{}}
 					// 3. check count of users in this chat room, before unregister (delete) a user from this chat
 					if len(h.Rooms[cl.RoomID].Clients) != 0 {
 						// 4. broadcast the messaage for other users for information about the user left
-						h.Broadcast <- &Message{
+						h.Broadcast <- Message{
 							ID:        GetUUID(),
 							From:      cl.Username,
 							RoomID:    cl.RoomID,
@@ -104,15 +108,19 @@ func (h *ChatHub) Run() {
 					delete(h.Rooms[cl.RoomID].Clients, cl.ID)
 					// 6. and after close the user message chan
 					close(cl.Message)
+					slog.Info(fmt.Sprintf("the %s successful unregistered from the %s\n", cl.Username, cl.RoomID))
 				}
 			}
 		case msg := <-h.Broadcast:
 			// 1. get rooms | chats by roomID from msg.RoomID
+			slog.Debug("recieve a message in broadcast channel")
+			// slog.Debug(fmt.Sprintf("broadcast:\n\tmsg: %s\n\tfrom:%s\n\for the chat:%s\n", msg.Content, msg.From, msg.RoomID))
 			if _, ok := h.Rooms[msg.RoomID]; ok {
 				// 2. get every users | clients in this rooms
-				for _, user := range h.Rooms[msg.RoomID].Clients {
+				for _, cl := range h.Rooms[msg.RoomID].Clients {
 					// 3. broadcast a message for every users
-					user.Message <- msg
+					slog.Debug("message successful broadcast for every this chat clients", "client", cl.Username, "msgID", msg.ID)
+					cl.Message <- msg
 				}
 			}
 		}
@@ -148,6 +156,7 @@ func (c *Client) WriteMessage() {
 		}
 		// 3. send message -> web_socket
 		c.Conn.WriteJSON(msg)
+		slog.Info("client.WriteMessage, successful written the msg", "msg", msg)
 	}
 }
 
@@ -161,7 +170,7 @@ func (c *Client) ReadMessage(ch *ChatHub) {
 
 	for {
 		// 1. if recive a new message from websocket con, we readd this msg
-		_, msg, err := c.Conn.ReadMessage() // TODO: json
+		_, msg, err := c.Conn.ReadMessage()
 		// 2. if error occured while reading the message, log this err, and break infinity loop
 		if err != nil { // errors.Is()
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
@@ -171,7 +180,7 @@ func (c *Client) ReadMessage(ch *ChatHub) {
 		}
 
 		// 3. create a new instance of thh message, and assign data
-		message := &Message{
+		message := Message{
 			ID:          GetUUID(),
 			From:        c.Username,
 			RoomID:      c.RoomID,
@@ -181,6 +190,8 @@ func (c *Client) ReadMessage(ch *ChatHub) {
 		}
 
 		// 4. after broadcast this message to other users
+		fmt.Println("client.ReadMessage, send msg to broadcast channel") // TODO: remove this fmt log
 		ch.Broadcast <- message
 	}
+	slog.Debug("client.ReadMessage, the ws connection was closed")
 }

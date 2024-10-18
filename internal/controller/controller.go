@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/Pruel/real-time-forum/internal/controller/wschat"
 	"github.com/Pruel/real-time-forum/internal/model"
 	"github.com/Pruel/real-time-forum/pkg/sqlite"
 )
@@ -32,14 +33,16 @@ type Controller struct {
 	*CommentController
 	// category controller for Admin set up maybe in future
 	*WsChatController // WebSocketCtl
+	ChatHub           *wschat.ChatHub
 }
 
-func New(db *sqlite.Database) *Controller {
+func New(db *sqlite.Database, ch *wschat.ChatHub) *Controller {
 	return &Controller{
 		AuthController:    NewAuthController(db),
 		PostController:    NewPostController(db),
 		CommentController: NewCommentController(db),
-		WsChatController:  NewWSChatController(db),
+		WsChatController:  NewWSChatController(db, ch),
+		ChatHub:           ch,
 	}
 }
 

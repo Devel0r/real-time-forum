@@ -15,6 +15,7 @@ import (
 
 	wschat "github.com/Pruel/real-time-forum/internal/controller/wschat"
 	"github.com/Pruel/real-time-forum/internal/model/repository"
+	"github.com/Pruel/real-time-forum/pkg/serror"
 	"github.com/Pruel/real-time-forum/pkg/sqlite"
 )
 
@@ -26,9 +27,9 @@ type WsChatController struct {
 }
 
 // NewWSChatController constructor
-func NewWSChatController(db *sqlite.Database) *WsChatController {
+func NewWSChatController(db *sqlite.Database, ch *wschat.ChatHub) *WsChatController {
 	return &WsChatController{
-		Hub:      wschat.NewChat(),
+		Hub:      ch,
 		ARepo:    repository.NewAuthRepository(db),
 		ChatRepo: repository.NewChatReposotory(db),
 	}
@@ -95,7 +96,7 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 
 	room := r.URL.Query().Get("room") // room name
 	inviteUsername := r.URL.Query().Get("invited_username")
-	idstr := r.URL.Query().Get("userID")
+	idstr := r.URL.Query().Get("user_id")
 	userID, _ := strconv.Atoi(idstr)
 
 	// ws://localhost:8081/ws/create-pvchat?room=amongASS&userID=2&invited_username=user1
@@ -137,7 +138,7 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		Username: user.Login,
 		RoomID:   komnata.ID,
 		Conn:     conn,
-		Message:  make(chan *wschat.Message, 10),
+		Message:  make(chan wschat.Message, 10),
 	}
 
 	bobaID := strconv.Itoa(inUser.Id)
@@ -146,11 +147,12 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		Username: inUser.Login,
 		RoomID:   komnata.ID,
 		Conn:     conn,
-		Message:  make(chan *wschat.Message, 10),
+		Message:  make(chan wschat.Message, 10),
 	}
 
-	komnata.Clients[Biba.ID] = &Biba
-	komnata.Clients[Boba.ID] = &Boba
+	// TODO: ref: remove this alg step
+	// komnata.Clients[Biba.ID] = &Biba
+	// komnata.Clients[Boba.ID] = &Boba
 
 	// add this room into rooms of the chat hub
 	ws.Hub.Rooms[komnata.ID] = komnata
@@ -176,12 +178,34 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	}
 	aroom.Clients[bobaID] = boba
 
-	// save this room into database
-	roomID, err := ws.ChatRepo.SaveRoom(&aroom)
+	ws.Hub.Rooms[komnata.ID] = komnata
+	ws.Hub.Register <- &Biba
+	ws.Hub.Register <- &Boba
+
+	gMsg := wschat.Message{
+		ID:      wschat.GetUUID(),
+		From:    Biba.Username,
+		RoomID:  komnata.ID,
+		Content: fmt.Sprintf("the %s created the %s chat, and add the %s\n", Biba.Username, aroom.Name, Boba.Username),
+	}
+
+	ws.Hub.Broadcast <- gMsg
+	msgID, err := ws.ChatRepo.SaveMessage(&gMsg)
 	if err != nil {
 		slog.Error(err.Error())
 		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return
+	}
+	slog.Info("message successful saved into daatabase", "msgID", msgID)
+
+	// save this room into database
+	roomID, err := ws.ChatRepo.SaveRoom(&aroom)
+	if err != nil {
+		if !errors.Is(err, serror.ErrRoomAlreadyExists) {
+			slog.Error(err.Error())
+			ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+			return
+		}
 	}
 	slog.Info("the room successful saved into database", "room_id", roomID)
 
@@ -198,6 +222,11 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return
 	}
+
+	slog.Info(fmt.Sprintf("the %s chat successfull created by %s for %s, chat | room is active", komnata.Name, Biba.Username, Boba.Username))
+	go Biba.WriteMessage()
+	Biba.ReadMessage(ws.Hub)
+	slog.Warn("the %s chat is diactived by clients, websocket connection is broken")
 }
 
 // JoinRoom | JoinGroupChat
@@ -273,7 +302,7 @@ func (c *WsChatController) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	// and save this user into database
 	Client := wschat.Client{
 		Conn:    conn,
-		Message: make(chan *wschat.Message, 10),
+		Message: make(chan wschat.Message, 10),
 	}
 
 	dclient, err := c.ChatRepo.GetClientByUsername(username)
@@ -322,13 +351,15 @@ func (c *WsChatController) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error(err.Error())
 		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return
 	}
 
 	//9. send to front-end ws info about this operations
 	Client.Conn.WriteJSON(gMsg)
 
 	//6. broadcast this message in this room
-	c.Hub.Broadcast <- &gMsg
+	// TODO: test again Hub.Broadcast, and Register, with Unregister channels
+	c.Hub.Broadcast <- gMsg
 	c.Hub.Register <- &Client
 
 	//7. add ws connection, client.conn

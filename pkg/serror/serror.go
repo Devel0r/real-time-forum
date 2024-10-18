@@ -37,5 +37,6 @@ var (
 	ErrEmptyCategoryData = errors.New("error, empty category data")
 
 	// Chat errors
-	ErrEmptyRoomID = errors.New("error, empty room ID data")
+	ErrEmptyRoomID       = errors.New("error, empty room ID data")
+	ErrRoomAlreadyExists = errors.New("error, room already exists in database")
 )

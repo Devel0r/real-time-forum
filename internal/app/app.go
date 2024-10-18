@@ -11,6 +11,7 @@ import (
 	"github.com/Pruel/real-time-forum/internal/controller"
 	"github.com/Pruel/real-time-forum/internal/controller/router"
 	"github.com/Pruel/real-time-forum/internal/controller/server"
+	"github.com/Pruel/real-time-forum/internal/controller/wschat"
 	"github.com/Pruel/real-time-forum/pkg/cstructs"
 	"github.com/Pruel/real-time-forum/pkg/sqlite"
 )
@@ -27,7 +28,9 @@ func Run(cfg *cstructs.Config) error {
 
 	slog.Debug("Successfuly connected to the SQLite3 database")
 
-	ctl := controller.New(db)
+	chatHub := wschat.NewChat()
+	go chatHub.Run()
+	ctl := controller.New(db, chatHub)
 	router := router.New(ctl)
 	router.InitRouter()
 	slog.Debug("Sucessful initialized router and created controllers")
