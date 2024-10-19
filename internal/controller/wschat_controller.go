@@ -83,6 +83,17 @@ func (ws *WsChatController) getChatData(w http.ResponseWriter, r *http.Request) 
 		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return chatData, err
 	}
+	// TODO: implement last message saving for room.last_message
+
+	for _, client := range ws.Hub.Clients {
+		for _, cl := range clients {
+			if cl.ID == client.ID {
+				// TODO: fix: maybe not assign
+				cl.IsOnline = true
+			}
+		}
+	}
+
 	chatData.ClientsList = clients
 
 	return chatData, nil
@@ -218,6 +229,9 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		RoomID:  komnata.ID,
 		Content: fmt.Sprintf("the %s created the %s chat, and add the %s\n", Biba.Username, aroom.Name, Boba.Username),
 	}
+	// TODO: assign additional info for this room
+	aroom.ClientCretorID = biba.ID
+	aroom.ClientCretorID = boba.ID
 
 	msgID, err := ws.ChatRepo.SaveMessage(&gMsg)
 	if err != nil {

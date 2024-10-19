@@ -180,6 +180,7 @@ func (c *Client) ReadMessage(ch *ChatHub) {
 		if err != nil { // errors.Is()
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				slog.Error(err.Error())
+				break
 			}
 			break
 		}
@@ -198,5 +199,6 @@ func (c *Client) ReadMessage(ch *ChatHub) {
 		fmt.Println("client.ReadMessage, send msg to broadcast channel") // TODO: remove this fmt log
 		ch.Broadcast <- message
 	}
+
 	slog.Debug("client.ReadMessage, the ws connection was closed")
 }

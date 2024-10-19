@@ -52,6 +52,18 @@
                     <span class="chat-last-message">Последнее сообщение...</span>
                 </div>
             </div>
+            {{ range .CurrentRoomClietns}}
+                <!-- Здесь динамически генерируется список чатов -->
+                <div class="chat-item active">
+                    <div class="chat-avatar">
+                        <img src="/static/img/profile.png" alt="User Avatar">
+                    </div>
+                    <div class="chat-info">
+                        <span class="chat-name">{{ .Name }}</span>
+                        <span class="chat-last-message"> {{ .LastMessage}}</span>
+                    </div>
+                </div>
+            {{ end }}
             <!-- Добавьте другие чаты -->
         </div>
 
