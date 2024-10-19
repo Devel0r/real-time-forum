@@ -62,9 +62,9 @@ func (c *ChatRepository) GetRoomByID(id string) (sroom wschat.SRoom, err error) 
 	clients := ""
 	lastMsg := ""
 	err = c.DB.SQLite.QueryRow("SELECT id, name, clients, client_creator_id, client_invited_id, last_msg FROM rooms WHERE id=?", id).Scan(&sroom.ID,
-		&sroom.Name, &clients, &sroom.ClientCretorID, &sroom.ClientInvitedID, &sroom.LastMessage)
+		&sroom.Name, &clients, &sroom.ClientCretorID, &sroom.ClientInvitedID, &lastMsg)
 	if err != nil {
-		return sroom, serror.ErrEmptyRoomID
+		return sroom, err
 	}
 
 	if err := json.Unmarshal([]byte(clients), &sroom.Clients); err != nil {
