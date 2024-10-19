@@ -35,32 +35,70 @@ func NewWSChatController(db *sqlite.Database, ch *wschat.ChatHub) *WsChatControl
 	}
 }
 
+// ChatData
+type ChatData struct {
+	ClientsList        []wschat.SClient // all online and offline users
+	Messages           []wschat.Message // all messages by the current room
+	CurrentRoomClients []wschat.SRoom   // all the current client rooms
+	Username           string
+}
+
+func (ws *WsChatController) getChatData(w http.ResponseWriter, r *http.Request) (ChatData, error) {
+	chatData := ChatData{}
+	if w == nil || r == nil {
+		return chatData, errors.New("error, nil arguments")
+	}
+
+	userID, err := ws.ARepo.GetUserIDFromSession(w, r)
+	if err != nil {
+		slog.Warn(err.Error())
+		http.Redirect(w, r, "/sign-in", http.StatusSeeOther)
+		return chatData, err
+	}
+
+	user, err := ws.ARepo.GetUserByUserID(userID)
+	if err != nil {
+		slog.Error(err.Error())
+		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return chatData, err
+	}
+	chatData.Username = user.Login
+
+	client, err := ws.ChatRepo.GetClientByUsername(user.Login)
+	if err != nil {
+		return chatData, err
+	}
+
+	rooms, err := ws.ChatRepo.GetAllRoomsByClientID(client.ID)
+	if err != nil {
+		slog.Error(err.Error())
+		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return chatData, err
+	}
+	chatData.CurrentRoomClients = rooms
+
+	clients, err := ws.ChatRepo.GetAllClients()
+	if err != nil {
+		slog.Error(err.Error())
+		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return chatData, err
+	}
+	chatData.ClientsList = clients
+
+	return chatData, nil
+}
+
 // ChatPage
 func (ws *Controller) ChatPage(w http.ResponseWriter, r *http.Request) {
 	tmp := template.Must(template.ParseFiles(GetTmpPath("wschat")))
 
-	// get user
-	userID, err := ws.AuthController.ARepo.GetUserIDFromSession(w, r)
-	if err != nil {
-		slog.Warn(err.Error())
-		http.Redirect(w, r, "/sign-in", http.StatusSeeOther)
-		return
-	}
-
-	user, err := ws.AuthController.ARepo.GetUserByUserID(userID)
+	// get chat data
+	chatData, err := ws.WsChatController.getChatData(w, r)
 	if err != nil {
 		slog.Error(err.Error())
-		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
-		return
 	}
 
-	data := struct {
-		Username string
-	}{
-		Username: user.Login,
-	}
-
-	if err := tmp.Execute(w, data); err != nil {
+	if err := tmp.Execute(w, chatData); err != nil {
 		slog.Error(err.Error())
 		return
 	}
@@ -99,7 +137,7 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	idstr := r.URL.Query().Get("user_id")
 	userID, _ := strconv.Atoi(idstr)
 
-	// ws://localhost:8081/ws/create-pvchat?room=amongASS&userID=2&invited_username=user1
+	//
 
 	// params
 	// userID, err := ws.ARepo.GetUserIDFromSession(w, r)
@@ -150,10 +188,6 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		Message:  make(chan wschat.Message, 10),
 	}
 
-	// TODO: ref: remove this alg step
-	// komnata.Clients[Biba.ID] = &Biba
-	// komnata.Clients[Boba.ID] = &Boba
-
 	// add this room into rooms of the chat hub
 	ws.Hub.Rooms[komnata.ID] = komnata
 
@@ -178,10 +212,6 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	}
 	aroom.Clients[bobaID] = boba
 
-	ws.Hub.Rooms[komnata.ID] = komnata
-	ws.Hub.Register <- &Biba
-	ws.Hub.Register <- &Boba
-
 	gMsg := wschat.Message{
 		ID:      wschat.GetUUID(),
 		From:    Biba.Username,
@@ -189,7 +219,6 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		Content: fmt.Sprintf("the %s created the %s chat, and add the %s\n", Biba.Username, aroom.Name, Boba.Username),
 	}
 
-	ws.Hub.Broadcast <- gMsg
 	msgID, err := ws.ChatRepo.SaveMessage(&gMsg)
 	if err != nil {
 		slog.Error(err.Error())
@@ -224,6 +253,11 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	}
 
 	slog.Info(fmt.Sprintf("the %s chat successfull created by %s for %s, chat | room is active", komnata.Name, Biba.Username, Boba.Username))
+	ws.Hub.Rooms[komnata.ID] = komnata
+	ws.Hub.Register <- &Biba
+	ws.Hub.Register <- &Boba
+	ws.Hub.Broadcast <- gMsg
+
 	go Biba.WriteMessage()
 	Biba.ReadMessage(ws.Hub)
 	slog.Warn("the %s chat is diactived by clients, websocket connection is broken")
@@ -261,7 +295,7 @@ func (c *WsChatController) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//3. compare this room_id with room_id from database, ws.ChatHub also username, user_id
-	droom, err := c.ChatRepo.GetRoomID(roomID)
+	droom, err := c.ChatRepo.GetRoomByID(roomID)
 	if err != nil {
 		slog.Error(err.Error())
 		ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))

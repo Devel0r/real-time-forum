@@ -34,13 +34,19 @@ func (c *ChatRepository) SaveRoom(room *wschat.SRoom) (id string, err error) {
 		return "", err
 	}
 
-	if err := c.DB.SQLite.QueryRow("SELECT id FROM rooms WHERE id=?", room.ID).Scan(&id); err != nil {
-		return id, serror.ErrRoomAlreadyExists
+	msgData, err := json.Marshal(room.LastMessage)
+	if err != nil {
+		return "", err
 	}
 
-	_, err = c.DB.SQLite.Exec("INSERT INTO rooms(id, name, clients_id) values(?, ?, ?)", room.ID,
-		room.Name, string(data))
-	if err != nil {
+	if err := c.DB.SQLite.QueryRow("SELECT id FROM rooms WHERE id=?", room.ID).Scan(&id); err != nil {
+		if err != sql.ErrNoRows {
+			return id, serror.ErrRoomAlreadyExists
+		}
+	}
+
+	if _, err := c.DB.SQLite.Exec("INSERT INTO rooms(id, name, clients, client_creator_id, client_invited_id, last_msg) values(?, ?, ?, ?, ?, ?)", room.ID,
+		room.Name, string(data), room.ClientCretorID, room.ClientInvitedID, string(msgData)); err != nil {
 		return "", err
 	}
 
@@ -48,13 +54,15 @@ func (c *ChatRepository) SaveRoom(room *wschat.SRoom) (id string, err error) {
 }
 
 // GetRoomByID
-func (c *ChatRepository) GetRoomID(id string) (sroom wschat.SRoom, err error) {
+func (c *ChatRepository) GetRoomByID(id string) (sroom wschat.SRoom, err error) {
 	if id == "" {
 		return sroom, serror.ErrEmptyRoomID
 	}
 
 	clients := ""
-	err = c.DB.SQLite.QueryRow("SELECT id, name, clients_id FROM rooms WHERE id=?", id).Scan(&sroom.ID, &sroom.Name, &clients)
+	lastMsg := ""
+	err = c.DB.SQLite.QueryRow("SELECT id, name, clients, client_creator_id, client_invited_id, last_msg FROM rooms WHERE id=?", id).Scan(&sroom.ID,
+		&sroom.Name, &clients, &sroom.ClientCretorID, &sroom.ClientInvitedID, &sroom.LastMessage)
 	if err != nil {
 		return sroom, serror.ErrEmptyRoomID
 	}
@@ -63,12 +71,61 @@ func (c *ChatRepository) GetRoomID(id string) (sroom wschat.SRoom, err error) {
 		return sroom, err
 	}
 
+	if err := json.Unmarshal([]byte(lastMsg), &sroom.LastMessage); err != nil {
+		return sroom, nil
+	}
+
 	return sroom, nil
 }
 
 // GetRooms
+func (c *ChatRepository) GetAllRoomsByClientID(clientID string) (rooms []wschat.SRoom, err error) {
+	if clientID == "" {
+		return nil, errors.New("error, invalid room ids")
+	}
+
+	rrows, err := c.DB.SQLite.Query("SELECT id, name, clients, client_creator_id, client_invited_id, last_msg FROM rooms WHERE id=?")
+	if err != nil {
+		return nil, err
+	}
+
+	for rrows.Next() {
+		room := wschat.SRoom{}
+		cls := ""
+		lastMsg := ""
+		if err := rrows.Scan(&room.ID, &room.Name, &cls, &room.ClientCretorID, &room.ClientInvitedID, &lastMsg); err != nil {
+			slog.Warn(err.Error())
+			continue
+		}
+
+		if err := json.Unmarshal([]byte(cls), &room.Clients); err != nil {
+			slog.Warn(err.Error())
+			continue
+		}
+
+		if err := json.Unmarshal([]byte(lastMsg), &room.LastMessage); err != nil {
+			slog.Warn(err.Error())
+			continue
+		}
+
+		rooms = append(rooms, room)
+	}
+
+	return rooms, nil
+}
 
 // DeleteRoomByID
+func (c *ChatRepository) DeleteByRoomID(roomID string) error {
+	if roomID == "" {
+		return serror.ErrEmptyRoomID
+	}
+
+	if _, err := c.DB.SQLite.Exec("DELETE FROM rooms WHERE id=?", roomID); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 // SaveClients
 func (c *ChatRepository) SaveClients(clients ...*wschat.SClient) (clients_ids []string, err error) {
@@ -77,14 +134,14 @@ func (c *ChatRepository) SaveClients(clients ...*wschat.SClient) (clients_ids []
 	}
 
 	// ..Type -> func(1, 2, 3) -> []int{}
-	// I have a question
+	// I have a questin
 
 	for _, cl := range clients {
 		id := ""
 		if err := c.DB.SQLite.QueryRow("SELECT id FROM clients WHERE id=?", cl.ID).Scan(&id); err != nil {
 			if err == sql.ErrNoRows { // TODO: ref: this code, DRY
-				_, err := c.DB.SQLite.Exec("INSERT INTO clients(id, username, room_id) VALUES(?, ?, ?)", cl.ID,
-					cl.Username, cl.RoomID)
+				_, err := c.DB.SQLite.Exec("INSERT INTO clients(id, username, avatar, rooms_id) VALUES(?, ?, ?, ?)", cl.ID,
+					cl.Username, cl.Avatar, cl.RoomID)
 				if err != nil {
 					return nil, err
 				}
@@ -98,8 +155,8 @@ func (c *ChatRepository) SaveClients(clients ...*wschat.SClient) (clients_ids []
 			continue
 		}
 
-		_, err := c.DB.SQLite.Exec("INSERT INTO clients(id, username, room_id) VALUES(?, ?, ?)", cl.ID,
-			cl.Username, cl.RoomID)
+		_, err := c.DB.SQLite.Exec("INSERT INTO clients(id, username, avatar, rooms_id) VALUES(?, ?, ?, ?)", cl.ID,
+			cl.Username, cl.Avatar, cl.RoomID)
 		if err != nil {
 			return nil, err
 		}
@@ -115,8 +172,8 @@ func (c *ChatRepository) GetClientByUsername(username string) (client wschat.SCl
 		return client, errors.New("error, clients username is empty")
 	}
 
-	err = c.DB.SQLite.QueryRow("SELECT id, username, room_id FROM clients WHERE username=?", username).Scan(&client.ID,
-		&client.Username, &client.RoomID)
+	err = c.DB.SQLite.QueryRow("SELECT id, username, avatar, rooms_id FROM clients WHERE username=?", username).Scan(&client.ID,
+		&client.Username, &client.Avatar, &client.RoomID)
 	if err != nil {
 		return client, err
 	}
@@ -125,6 +182,23 @@ func (c *ChatRepository) GetClientByUsername(username string) (client wschat.SCl
 }
 
 // GetAllChatUsers
+func (c *ChatRepository) GetAllClients() (clients []wschat.SClient, err error) {
+	crows, err := c.DB.SQLite.Query("SELECT id, username, avatar, rooms_id FROM clients")
+	if err != nil {
+		return nil, err
+	}
+
+	for crows.Next() {
+		cl := &wschat.SClient{}
+		if err := crows.Scan(cl.ID, cl.Username, cl.Avatar, cl.RoomID); err != nil {
+			slog.Warn(err.Error())
+			continue
+		}
+		clients = append(clients, *cl)
+	}
+
+	return clients, nil
+}
 
 // SaveMessage
 func (c *ChatRepository) SaveMessage(msg *wschat.Message) (msgID string, err error) {

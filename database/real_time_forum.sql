@@ -8,6 +8,7 @@ CREATE TABLE users (
     gender TEXT NOT NULL DEFAULT 'Male',
     name TEXT NOT NULL,
     surname TEXT NOT NULL, 
+    avatar TEXT,
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL UNIQUE
 );
@@ -48,13 +49,17 @@ CREATE TABLE IF NOT EXISTS comments (
 CREATE TABLE IF NOT EXISTS rooms (
     id VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
-    clients_id TEXT NOT NULL
+    clients TEXT NOT NULL,
+    client_creator_id VARCHAR(255) NOT NULL,
+    client_invited_id VARCHAR(255) NOT NULL,
+    last_msg TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS clients (
     id VARCHAR(255) NOT NULL,
     username VARCHAR(255) NOT NULL,
-    room_id TEXT NOT NULL
+    avatar TEXT,
+    rooms_id TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS messages (

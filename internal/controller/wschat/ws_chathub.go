@@ -49,13 +49,18 @@ type Message struct {
 type SClient struct {
 	ID       string `json:"client_id"`
 	Username string `json:"username"`
+	Avatar   string `json:"avatar"`
 	RoomID   string `json:"room_id"`
+	IsOnline bool   `json:"is_online"`
 }
 
 type SRoom struct {
-	ID      string             `json:"room_id"`
-	Name    string             `json:"name"`
-	Clients map[string]SClient `json:"clients"`
+	ID              string             `json:"room_id"`
+	Name            string             `json:"name"`
+	Clients         map[string]SClient `json:"clients"`
+	ClientCretorID  string             `json:"client_cretor_id"`
+	ClientInvitedID string             `json:"client_invited_id"`
+	LastMessage     *Message           `json:"last_message"`
 }
 
 func NewChat() *ChatHub {
