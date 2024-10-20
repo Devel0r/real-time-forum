@@ -43,6 +43,24 @@ type ChatData struct {
 	Username           string
 }
 
+// getClinets
+func (ws *WsChatController) getClients(chat *wschat.ChatHub, dbClients []wschat.SClient) (cls []wschat.SClient, err error) {
+	if chat == nil || dbClients == nil {
+		return nil, errors.New("error, nil struct pointer")
+	}
+
+	for _, wcl := range chat.Clients {
+		for _, dcl := range dbClients {
+			if wcl.ID == dcl.ID {
+				dcl.IsOnline = true
+			}
+			cls = append(cls, dcl)
+		}
+	}
+
+	return cls, nil
+}
+
 func (ws *WsChatController) getChatData(w http.ResponseWriter, r *http.Request) (ChatData, error) {
 	chatData := ChatData{}
 	if w == nil || r == nil {
@@ -85,16 +103,13 @@ func (ws *WsChatController) getChatData(w http.ResponseWriter, r *http.Request) 
 	}
 	// TODO: implement last message saving for room.last_message
 
-	for _, client := range ws.Hub.Clients {
-		for _, cl := range clients {
-			if cl.ID == client.ID {
-				// TODO: fix: maybe not assign
-				cl.IsOnline = true
-			}
-		}
+	cls, err := ws.getClients(ws.Hub, clients)
+	if err != nil {
+		slog.Error(err.Error())
+		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return chatData, err
 	}
-
-	chatData.ClientsList = clients
+	chatData.ClientsList = cls
 
 	return chatData, nil
 }

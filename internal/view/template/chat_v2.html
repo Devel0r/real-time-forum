@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="../static/css/chat.css">
+    <link rel="icon" type="image/png" href="../static/favicon/favicon16.png">
+    <link rel="icon" type="image/png" href="../static/favicon/favicon32.png">
+    <link rel="icon" type="image/png" href="../static/favicon/favicon96.png">
+    <title>Real Time Forum</title>
+</head>
+<body>
+<div class="container">
+     <!-- Header -->
+      <header class="header">
+            <!-- Левая часть: Логотип -->
+            <div class="logo">
+                <a href="/">
+                    <img src="../static/img/logo.png" alt="Logo" class="logo-image">
+                </a>
+            </div>
+            <!-- Правая часть: Меню пользователя -->
+            <div class="user-menu">
+                <!-- Профиль пользователя -->
+                <div class="profile">
+                    <div class="profile-container" onclick="toggleDropdown()">
+                        <div class="profile-icon">
+                            <img src="../static/img/profile.png" alt="User Avatar">
+                        </div>
+                        <span class="user-name">{{.Username}}</span>
+                    </div>
+                    <!-- Выпадающее меню -->
+                    <div class="dropdown-menu" id="dropdown-menu">
+                        <button class="dropdown-item" onclick="window.location.href='https://www.youtube.com/watch?v=obmlZH3X9gs'">Secret Button</button>
+                        <button class="dropdown-item" onclick="window.location.href='/sign-out'">Sign Out</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+     <!-- Content -->
+    <!-- Content -->
+    <div class="chat-container">
+        <!-- Левая колонка: список чатов -->
+        <div class="chat-list">
+            <!-- Здесь динамически генерируется список чатов -->
+            {{ range .CurrentRoomClients }}
+            <div class="chat-item">
+                <div class="chat-avatar">
+                    <img src="/static/img/profile.png" alt="User Avatar">
+                </div>
+                <div class="chat-info">
+                    <span class="chat-name">{{ .Name }}</span>
+                    <span class="chat-last-message">{{ .LastMessage.Content }}</span>
+                </div>
+            </div>
+            {{ end }}
+        </div>
+
+        <!-- Центральная область: переписка -->
+        <div class="chat-content" id="chat-messages">
+            <div class="messages">
+                <!-- Здесь отображаются сообщения -->
+                {{ range .Messages }}
+                <div class="message {{ if eq .From $.Username }}outgoing{{ else }}incoming{{ end }}">
+                    {{ if ne .From $.Username }}
+                    <div class="message-avatar">
+                        <img src="/static/img/profile.png" alt="User Avatar">
+                    </div>
+                    {{ end }}
+                    <div class="message-text">
+                        <p>{{ .Content }}</p>
+                        <span class="message-time">{{ .CreatedAt }}</span>
+                    </div>
+                </div>
+                {{ end }}
+            </div>
+            <!-- Поле ввода сообщения -->
+            <div class="message-input">
+                <input type="text" placeholder="Введите сообщение..." id="message-input">
+                <button id="send-button">Отправить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleDropdown() {
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        dropdownMenu.style.display = (dropdownMenu.style.display === 'flex') ? 'none' : 'flex';
+    }
+
+    // Закрытие меню при клике вне его области
+    window.onclick = function(event) {
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        const profileContainer = document.querySelector('.profile-container');
+
+        if (!dropdownMenu.contains(event.target) && !profileContainer.contains(event.target)) {
+            dropdownMenu.style.display = 'none';
+        }
+    }
+
+    // Chat logic scripts
+    const socket = new WebSocket("ws://localhost:8081/ws/join-room?room_id={{ .CurrentRoomID }}&username={{ .Username }}");
+
+    // DOM Elements
+    const messageInput = document.getElementById('message-input');
+    const chatMessages = document.querySelector('.messages');
+    const sendButton = document.getElementById('send-button');
+
+    // Socket event handlers
+    socket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        displayMessage(data.content, data.from === "{{ .Username }}" ? "outgoing" : "incoming", data.from, data.createdAt);
+    };
+
+    sendButton.addEventListener('click', function() {
+        const message = messageInput.value;
+        if (message.trim() !== "") {
+            const msgData = { content: message, from: "{{ .Username }}", roomID: "{{ .CurrentRoomID }}" };
+            socket.send(JSON.stringify(msgData));
+            displayMessage(message, "outgoing", "{{ .Username }}", new Date().toLocaleTimeString());
+            messageInput.value = '';
+        }
+    });
+
+    messageInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            sendButton.click();
+        }
+    });
+
+    function displayMessage(message, type, from, time) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', type);
+
+        if (type === 'incoming') {
+            const avatarDiv = document.createElement('div');
+            avatarDiv.classList.add('message-avatar');
+            const avatarImg = document.createElement('img');
+            avatarImg.src = '/static/img/profile.png';
+            avatarImg.alt = 'User Avatar';
+            avatarDiv.appendChild(avatarImg);
+            messageDiv.appendChild(avatarDiv);
+        }
+
+        const messageTextDiv = document.createElement('div');
+        messageTextDiv.classList.add('message-text');
+        const messageP = document.createElement('p');
+        messageP.textContent = message;
+        const messageTime = document.createElement('span');
+        messageTime.classList.add('message-time');
+        messageTime.textContent = time;
+        messageTextDiv.appendChild(messageP);
+        messageTextDiv.appendChild(messageTime);
+        messageDiv.appendChild(messageTextDiv);
+
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+</script>
+</body>
+</html>

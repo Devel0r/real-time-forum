@@ -84,7 +84,7 @@ func (c *ChatRepository) GetAllRoomsByClientID(clientID string) (rooms []wschat.
 		return nil, errors.New("error, invalid room ids")
 	}
 
-	rrows, err := c.DB.SQLite.Query("SELECT id, name, clients, client_creator_id, client_invited_id, last_msg FROM rooms WHERE id=?")
+	rrows, err := c.DB.SQLite.Query("SELECT id, name, clients, client_creator_id, client_invited_id, last_msg FROM rooms WHERE id=?", clientID)
 	if err != nil {
 		return nil, err
 	}
@@ -182,19 +182,20 @@ func (c *ChatRepository) GetClientByUsername(username string) (client wschat.SCl
 }
 
 // GetAllChatUsers
-func (c *ChatRepository) GetAllClients() (clients []wschat.SClient, err error) {
+func (c *ChatRepository) GetAllClients() ([]wschat.SClient, error) {
 	crows, err := c.DB.SQLite.Query("SELECT id, username, avatar, rooms_id FROM clients")
 	if err != nil {
 		return nil, err
 	}
+	clients := make([]wschat.SClient, 1)
 
 	for crows.Next() {
-		cl := &wschat.SClient{}
-		if err := crows.Scan(cl.ID, cl.Username, cl.Avatar, cl.RoomID); err != nil {
+		cl := wschat.SClient{}
+		if err := crows.Scan(&cl.ID, &cl.Username, &cl.Avatar, &cl.RoomID); err != nil {
 			slog.Warn(err.Error())
 			continue
 		}
-		clients = append(clients, *cl)
+		clients = append(clients, cl)
 	}
 
 	return clients, nil
