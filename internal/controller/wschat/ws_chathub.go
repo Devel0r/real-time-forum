@@ -22,13 +22,13 @@ type ChatHub struct {
 
 // chathub or room
 type Room struct {
-	ID      string             `sql:"id" json:"room_id"`
-	Name    string             `sql:"name" json:"name"`
+	ID      string          `sql:"id" json:"room_id"`
+	Name    string          `sql:"name" json:"name"`
 	Clients map[int]*Client `sql:"clients" json:"clients"`
 }
 
 type Client struct {
-	ID       int `json:"client_id"`
+	ID       int    `json:"client_id"`
 	Username string `json:"username"`
 	RoomID   string `json:"room_id"`
 	Conn     *websocket.Conn
@@ -56,12 +56,12 @@ type Message struct {
 // }
 
 type SRoom struct {
-	ID              string             `json:"room_id"`
-	Name            string             `json:"name"`
+	ID   string `json:"room_id"`
+	Name string `json:"name"`
 	// Clients         map[string]SClient `json:"clients"`
-	ClientCretorID  int             `json:"client_cretor_id"`
-	ClientInvitedID int             `json:"client_invited_id"`
-	LastMessage     *Message           `json:"last_message"`
+	ClientCretorID  int      `json:"client_cretor_id"`
+	ClientInvitedID int      `json:"client_invited_id"`
+	LastMessage     *Message `json:"last_message"`
 }
 
 func NewChat() *ChatHub {
@@ -162,7 +162,6 @@ func (c *Client) WriteMessage() {
 		}
 		// 3. send message -> web_socket
 		c.Conn.WriteJSON(msg)
-		
 
 		slog.Info("client.WriteMessage, successful written the msg", "msg", msg)
 	}

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -48,23 +49,21 @@ func (a *AuthRepository) GetUserByUsername(username string) (*model.User, error)
 	}
 
 	user := model.User{}
-	err := a.DB.SQLite.QueryRow("SELECT id, login, age, gender, name, surname, email, password_hash FROM users WHERE login=?", username).Scan(
-		&user.Id,
-		&user.Login,
-		&user.Age,
-		&user.Gender,
-		&user.Name,
-		&user.Surname,
-		&user.Email,
-		&user.PasswordHash,
-	)
-
+	rms := ""
+	err := a.DB.SQLite.QueryRow("SELECT id, login, age, gender, name, surname, email, password_hash, rooms_id FROM users WHERE login=?", username).
+		Scan(&user.Id, &user.Login, &user.Age, &user.Gender, &user.Name, &user.Surname, &user.Email, &user.PasswordHash, &rms)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, serror.ErrUserNotFound
 		}
 		return nil, err
 	}
+
+	if err := json.Unmarshal([]byte(rms), &user.RoomsID); err != nil {
+		fmt.Printf("ERROR:%v\n", err)
+		return nil, err
+	}
+
 	return &user, nil
 }
 
@@ -75,16 +74,20 @@ func (a *AuthRepository) GetUserByOnlyEmail(email string) (*model.User, error) {
 	}
 
 	user := model.User{}
+	rms := ""
 	// Выполняем SQL-запрос и сканируем данные в поля структуры user
-	err := a.DB.SQLite.QueryRow("SELECT id, login, age, gender, name, surname, email, password_hash FROM users WHERE email=?", email).Scan(
-		&user.Id, &user.Login, &user.Age, &user.Gender, &user.Name, &user.Surname, &user.Email, &user.PasswordHash)
-
+	err := a.DB.SQLite.QueryRow("SELECT id, login, age, gender, name, surname, email, password_hash, rooms_id FROM users WHERE email=?", email).Scan(
+		&user.Id, &user.Login, &user.Age, &user.Gender, &user.Name, &user.Surname, &user.Email, &user.PasswordHash, &rms)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			// Если пользователь не найден, возвращаем ErrUserNotFound
 			return nil, serror.ErrUserNotFound
 		}
 		// Возвращаем другие возможные ошибки
+		return nil, err
+	}
+
+	if err := json.Unmarshal([]byte(rms), &user.RoomsID); err != nil {
 		return nil, err
 	}
 
@@ -98,8 +101,9 @@ func (a *AuthRepository) GetUserByEmail(email string, user *model.User) (*model.
 	}
 
 	// Выполняем SQL-запрос и сканируем данные в поля структуры user
-	err := a.DB.SQLite.QueryRow("SELECT login, age, gender, name, surname, email, password_hash FROM users WHERE email=?", email).Scan(
-		&user.Login, &user.Age, &user.Gender, &user.Name, &user.Surname, &user.Email, &user.PasswordHash)
+	rms := ""
+	err := a.DB.SQLite.QueryRow("SELECT login, age, gender, name, surname, email, password_hash, rooms_id FROM users WHERE email=?", email).Scan(
+		&user.Login, &user.Age, &user.Gender, &user.Name, &user.Surname, &user.Email, &user.PasswordHash, &rms)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -107,6 +111,10 @@ func (a *AuthRepository) GetUserByEmail(email string, user *model.User) (*model.
 			return nil, serror.ErrUserNotFound
 		}
 		// Возвращаем другие возможные ошибки
+		return nil, err
+	}
+
+	if err := json.Unmarshal([]byte(rms), &user.RoomsID); err != nil {
 		return nil, err
 	}
 
@@ -120,8 +128,13 @@ func (a *AuthRepository) SaveUser(user *model.User) (id int, err error) {
 		return 0, serror.ErrEmptyUserData
 	}
 
-	res, err := a.DB.SQLite.Exec("INSERT INTO users(login, age, gender, name, surname, email, password_hash) VALUES(?, ?, ?, ?, ?, ?, ?)",
-		user.Login, user.Age, user.Gender, user.Name, user.Surname, user.Email, user.PasswordHash)
+	rmslData, err := json.Marshal(user.RoomsID)
+	if err != nil {
+		return 0, err
+	}
+
+	res, err := a.DB.SQLite.Exec("INSERT INTO users(login, age, gender, name, surname, email, password_hash, rooms_id) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+		user.Login, user.Age, user.Gender, user.Name, user.Surname, user.Email, user.PasswordHash, string(rmslData))
 	if err != nil {
 		return 0, err
 	}
@@ -202,24 +215,24 @@ func (a *AuthRepository) GetUserByUserID(userID int) (*model.User, error) {
 func (a *AuthRepository) GetAllUsers() ([]model.User, error) {
 	urows, err := a.DB.SQLite.Query("SELECT id, login, age, gender, name, surname, email, password_hash, rooms_id FROM users")
 	if err != nil {
-		return nil, err  
+		return nil, err
 	}
-	
+
 	users := []model.User{}
 	for urows.Next() {
-		user :=  model.User{}
-		rooms :=  ""
+		user := model.User{}
+		rooms := ""
 		err := urows.Scan(&user.Id, &user.Login, &user.Age, &user.Gender, &user.Name, &user.Surname, &user.Email, &user.PasswordHash, &rooms)
 		if err != nil {
 			return nil, err
 		}
 
 		if err := json.Unmarshal([]byte(rooms), &user.RoomsID); err != nil {
-			return nil,  err
+			return nil, err
 		}
-		
+
 		users = append(users, user)
 	}
-	
+
 	return users, nil
 }

@@ -36,7 +36,7 @@ func NewWSChatController(db *sqlite.Database, ch *wschat.ChatHub) *WsChatControl
 
 // ChatData
 type ChatData struct {
-	ClientsList        []model.User // all online and offline users
+	ClientsList        []model.User     // all online and offline users
 	Messages           []wschat.Message // all messages by the current room
 	CurrentRoomClients []wschat.SRoom   // all the current client rooms
 	Username           string
@@ -171,13 +171,14 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	inviteUsername := r.URL.Query().Get("invited_username")
 	// params
 
-	uID, err := ws.ARepo.GetUserIDFromSession(w, r)
-	if err != nil {
-		slog.Error(err.Error())
-		http.Redirect(w, r, "/sign-in", http.StatusSeeOther)
-		return
-	}
+	// uID, err := ws.ARepo.GetUserIDFromSession(w, r)
+	// if err != nil {
+	// 	slog.Error(err.Error())
+	// 	http.Redirect(w, r, "/sign-in", http.StatusSeeOther)
+	// 	return
+	// }
 
+	uID := 2 // TODO: remove this
 	user, err := ws.ARepo.GetUserByUserID(uID)
 	if err != nil {
 		slog.Error(err.Error())
@@ -222,8 +223,8 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 
 	// send this room to user, json
 	aroom := wschat.SRoom{
-		ID:      komnata.ID,
-		Name:    komnata.Name,
+		ID:   komnata.ID,
+		Name: komnata.Name,
 	}
 
 	// TODO: depricated, remove this code
@@ -335,7 +336,7 @@ func (c *WsChatController) JoinRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if droom.ID != roomID {
+	if droom.ID != roomID  {
 		slog.Error(errors.New("error, wrong room id").Error())
 		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return
@@ -384,6 +385,12 @@ func (c *WsChatController) JoinRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if droom.ClientInvitedID != dclient.Id {
+		slog.Error(errors.New("error, uninvited client try to join the chat").Error())
+		ErrorController(w, http.StatusMethodNotAllowed, "Access denied! Its not your chat!")
+		return
+	}
+
 	// TODO: depricated, remove this code
 	// dclient, err := c.ChatRepo.GetClientByUsername(username)
 	// if err != nil {
@@ -415,7 +422,7 @@ func (c *WsChatController) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	if dclient.Login != "" {
 		Client.ID = dclient.Id
 		Client.Username = dclient.Login
-		Client.RoomID = droom.ID 
+		Client.RoomID = droom.ID
 	}
 
 	//5. create a new message for greating this user in chat

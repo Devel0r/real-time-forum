@@ -56,6 +56,7 @@ func (actl *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user.PasswordHash = hash
+	user.RoomsID = []string{}
 
 	userID, err := actl.ARepo.SaveUser(&user)
 	if err != nil {
