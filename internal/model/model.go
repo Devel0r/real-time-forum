@@ -3,17 +3,22 @@ package model
 import (
 	"database/sql"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 type User struct {
-	Id           int    `sql:"id"`
-	Login        string `sql:"login"`
-	Age          int    `sql:"age"`
-	Gender       string `sql:"gender"`
-	Name         string `sql:"name"`
-	Surname      string `sql:"surname"`
-	Email        string `sql:"email"`
-	PasswordHash string `sql:"password_hash"`
+	Id           int      `sql:"id"`
+	Login        string   `sql:"login"`
+	Age          int      `sql:"age"`
+	Gender       string   `sql:"gender"`
+	Name         string   `sql:"name"`
+	Surname      string   `sql:"surname"`
+	Email        string   `sql:"email"`
+	PasswordHash string   `sql:"password_hash"`
+	RoomsID      []string `sql:"rooms_id" json:"rooms_id"`
+	IsOnline     bool     `sql:"is_online" json:"is_online"`
+	Conn         *websocket.Conn
 }
 
 type Session struct {

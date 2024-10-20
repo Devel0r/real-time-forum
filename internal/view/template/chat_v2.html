@@ -101,6 +101,7 @@
     }
 
     // Chat logic scripts
+    // TODO: add this web socket in a func, it must be work for every click on time while user click a room of the current user rooms list
     const socket = new WebSocket("ws://localhost:8081/ws/join-room?room_id={{ .CurrentRoomID }}&username={{ .Username }}");
 
     // DOM Elements

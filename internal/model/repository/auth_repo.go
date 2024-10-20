@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -195,4 +196,30 @@ func (a *AuthRepository) GetUserByUserID(userID int) (*model.User, error) {
 	}
 
 	return &user, nil
+}
+
+// GetAllUsers
+func (a *AuthRepository) GetAllUsers() ([]model.User, error) {
+	urows, err := a.DB.SQLite.Query("SELECT id, login, age, gender, name, surname, email, password_hash, rooms_id FROM users")
+	if err != nil {
+		return nil, err  
+	}
+	
+	users := []model.User{}
+	for urows.Next() {
+		user :=  model.User{}
+		rooms :=  ""
+		err := urows.Scan(&user.Id, &user.Login, &user.Age, &user.Gender, &user.Name, &user.Surname, &user.Email, &user.PasswordHash, &rooms)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := json.Unmarshal([]byte(rooms), &user.RoomsID); err != nil {
+			return nil,  err
+		}
+		
+		users = append(users, user)
+	}
+	
+	return users, nil
 }

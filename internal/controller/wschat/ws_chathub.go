@@ -13,7 +13,7 @@ import (
 type ChatHub struct {
 	IsGroupChat bool
 	Rooms       map[string]*Room
-	Clients     map[string]*Client
+	Clients     map[int]*Client
 	Register    chan *Client
 	Unregister  chan *Client
 	Broadcast   chan Message
@@ -24,11 +24,11 @@ type ChatHub struct {
 type Room struct {
 	ID      string             `sql:"id" json:"room_id"`
 	Name    string             `sql:"name" json:"name"`
-	Clients map[string]*Client `sql:"clients" json:"clients"`
+	Clients map[int]*Client `sql:"clients" json:"clients"`
 }
 
 type Client struct {
-	ID       string `json:"client_id"`
+	ID       int `json:"client_id"`
 	Username string `json:"username"`
 	RoomID   string `json:"room_id"`
 	Conn     *websocket.Conn
@@ -46,27 +46,28 @@ type Message struct {
 }
 
 // SimpleClient, SimpleRoom client struct clone without unsupported fields (json)
-type SClient struct {
-	ID       string `json:"client_id"`
-	Username string `json:"username"`
-	Avatar   string `json:"avatar"`
-	RoomID   string `json:"room_id"`
-	IsOnline bool   `json:"is_online"`
-}
+// TODO: depricated, remove this code
+// type SClient struct {
+// 	ID       string `json:"client_id"`
+// 	Username string `json:"username"`
+// 	Avatar   string `json:"avatar"`
+// 	RoomID   []string `json:"rooms_id"`
+// 	IsOnline bool   `json:"is_online"`
+// }
 
 type SRoom struct {
 	ID              string             `json:"room_id"`
 	Name            string             `json:"name"`
-	Clients         map[string]SClient `json:"clients"`
-	ClientCretorID  string             `json:"client_cretor_id"`
-	ClientInvitedID string             `json:"client_invited_id"`
+	// Clients         map[string]SClient `json:"clients"`
+	ClientCretorID  int             `json:"client_cretor_id"`
+	ClientInvitedID int             `json:"client_invited_id"`
 	LastMessage     *Message           `json:"last_message"`
 }
 
 func NewChat() *ChatHub {
 	return &ChatHub{
 		Rooms:      make(map[string]*Room, 10),
-		Clients:    make(map[string]*Client, 2),
+		Clients:    make(map[int]*Client, 2),
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
 		Broadcast:  make(chan Message, 10),
@@ -161,6 +162,8 @@ func (c *Client) WriteMessage() {
 		}
 		// 3. send message -> web_socket
 		c.Conn.WriteJSON(msg)
+		
+
 		slog.Info("client.WriteMessage, successful written the msg", "msg", msg)
 	}
 }
