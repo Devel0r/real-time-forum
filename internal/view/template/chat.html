@@ -39,54 +39,41 @@
             </div>
         </header>
      <!-- Content -->
-     <div class="chat-container">
+    <!-- Content -->
+    <div class="chat-container">
         <!-- Левая колонка: список чатов -->
         <div class="chat-list">
             <!-- Здесь динамически генерируется список чатов -->
-            <div class="chat-item active">
+            {{ range .CurrentRooms }}
+            <div class="chat-item">
                 <div class="chat-avatar">
                     <img src="/static/img/profile.png" alt="User Avatar">
                 </div>
                 <div class="chat-info">
-                    <span class="chat-name">User1</span>
-                    <span class="chat-last-message">Последнее сообщение...</span>
+                    <span class="chat-name">{{ .Name }}</span>
+                    <span class="chat-last-message">{{ .LastMessage.Content }}</span>
                 </div>
             </div>
-            {{ range .CurrentRoomClietns}}
-                <!-- Здесь динамически генерируется список чатов -->
-                <div class="chat-item active">
-                    <div class="chat-avatar">
-                        <img src="/static/img/profile.png" alt="User Avatar">
-                    </div>
-                    <div class="chat-info">
-                        <span class="chat-name">{{ .Name }}</span>
-                        <span class="chat-last-message"> {{ .LastMessage}}</span>
-                    </div>
-                </div>
             {{ end }}
-            <!-- Добавьте другие чаты -->
         </div>
 
         <!-- Центральная область: переписка -->
         <div class="chat-content" id="chat-messages">
             <div class="messages">
                 <!-- Здесь отображаются сообщения -->
-                <div class="message incoming">
+                {{ range .Messages }}
+                <div class="message {{ if eq .From $.Username }}outgoing{{ else }}incoming{{ end }}">
+                    {{ if ne .From $.Username }}
                     <div class="message-avatar">
                         <img src="/static/img/profile.png" alt="User Avatar">
                     </div>
+                    {{ end }}
                     <div class="message-text">
-                        <p>Привет! Как дела?</p>
-                        <span class="message-time">10:30 AM</span>
+                        <p>{{ .Content }}</p>
+                        <span class="message-time">{{ .CreatedAt }}</span>
                     </div>
                 </div>
-                <div class="message outgoing">
-                    <div class="message-text">
-                        <p>Привет! Всё хорошо, спасибо.</p>
-                        <span class="message-time">10:32 AM</span>
-                    </div>
-                </div>
-                <!-- Добавьте другие сообщения -->
+                {{ end }}
             </div>
             <!-- Поле ввода сообщения -->
             <div class="message-input">
@@ -113,49 +100,63 @@
         }
     }
 
-    // chat logic scripts
-    const socket = new WebSocket("ws://localhost:8081/ws/join-room?room=amongAss&username=user2")
+    // Chat logic scripts
+    const socket = new WebSocket("ws://localhost:8081/ws/join-room?room_id={{ .CurrentRoomID }}&username={{ .Username }}");
 
-    // dom.Element message.Input, chat-content, send-button
-    const messageInput = document.getElementById('message-input')
-    const chatMessages = document.getElementById('chat-content')
-    const sendButton = document.getElemmentById('send-button')
+    // DOM Elements
+    const messageInput = document.getElementById('message-input');
+    const chatMessages = document.querySelector('.messages');
+    const sendButton = document.getElementById('send-button');
 
-    // socket.onmessage
+    // Socket event handlers
     socket.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            // TODO: bug: fix this, implementing on backend
-            displayMessage(data.content, data.from === "username" ? "user" : "other");
-        };
+        const data = JSON.parse(event.data);
+        displayMessage(data.content, data.from === "{{ .Username }}" ? "outgoing" : "incoming", data.from, data.createdAt);
+    };
 
-    // message button event listener
     sendButton.addEventListener('click', function() {
         const message = messageInput.value;
         if (message.trim() !== "") {
-            socket.send(JSON.stringify({ content: message }));
-            displayMessage(message, "user");
+            const msgData = { content: message, from: "{{ .Username }}", roomID: "{{ .CurrentRoomID }}" };
+            socket.send(JSON.stringify(msgData));
+            displayMessage(message, "outgoing", "{{ .Username }}", new Date().toLocaleTimeString());
             messageInput.value = '';
         }
     });
 
-    // input message button click
     messageInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             sendButton.click();
         }
     });
 
-    function displayMessage(message, type) {
+    function displayMessage(message, type, from, time) {
         const messageDiv = document.createElement('div');
-        messageDiv.classList.add('message incoming', type);
-        messageDiv.textContent = message;
+        messageDiv.classList.add('message', type);
+
+        if (type === 'incoming') {
+            const avatarDiv = document.createElement('div');
+            avatarDiv.classList.add('message-avatar');
+            const avatarImg = document.createElement('img');
+            avatarImg.src = '/static/img/profile.png';
+            avatarImg.alt = 'User Avatar';
+            avatarDiv.appendChild(avatarImg);
+            messageDiv.appendChild(avatarDiv);
+        }
+
+        const messageTextDiv = document.createElement('div');
+        messageTextDiv.classList.add('message-text');
+        const messageP = document.createElement('p');
+        messageP.textContent = message;
+        const messageTime = document.createElement('span');
+        messageTime.classList.add('message-time');
+        messageTime.textContent = time;
+        messageTextDiv.appendChild(messageP);
+        messageTextDiv.appendChild(messageTime);
+        messageDiv.appendChild(messageTextDiv);
+
         chatMessages.appendChild(messageDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
-
-        scrollws = new WebSocket("ws://localhost:8081/ws/chat/get-more-messages")
-
-        
-        
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 </script>
 </body>
