@@ -1,6 +1,9 @@
 package wschat
 
 import (
+	"database/sql"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -8,6 +11,8 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/gorilla/websocket"
+
+	"github.com/Pruel/real-time-forum/pkg/sqlite"
 )
 
 type ChatHub struct {
@@ -33,28 +38,26 @@ type Client struct {
 	RoomID   string `json:"room_id"`
 	Conn     *websocket.Conn
 	Message  chan Message
+	DB       *sqlite.Database
 }
 
 type Message struct {
-	ID          string    `sql:"id" json:"message_id"`
-	From        string    `sql:"from" json:"from"`
-	RoomID      string    `sql:"room_id" json:"room_id"`
+	ID          string    `sql:"id" json:"-"`
 	Content     string    `sql:"content" json:"content"`
-	CreatedAt   time.Time `sql:"created_at" json:"created_at"`
-	IsDelivered bool
-	IsRead      bool
+	From        string    `sql:"from" json:"from"`
+	RoomID      string    `sql:"room_id" json:"roomID"`
+	CreatedAt   time.Time `sql:"created_at" json:"createdAt"`
+	IsDelivered bool      `json:"-"`
+	IsRead      bool      `json:"-"`
+}
+
+type SMessage struct {
+	Content string `json:"content"`
+	From    string `json:"from"`
+	RoomID  string `json:"roomID"`
 }
 
 // SimpleClient, SimpleRoom client struct clone without unsupported fields (json)
-// TODO: depricated, remove this code
-// type SClient struct {
-// 	ID       string `json:"client_id"`
-// 	Username string `json:"username"`
-// 	Avatar   string `json:"avatar"`
-// 	RoomID   []string `json:"rooms_id"`
-// 	IsOnline bool   `json:"is_online"`
-// }
-
 type SRoom struct {
 	ID   string `json:"room_id"`
 	Name string `json:"name"`
@@ -161,6 +164,25 @@ func (c *Client) WriteMessage() {
 			return
 		}
 		// 3. send message -> web_socket
+
+		// smsg := SMessage{
+		// 	Content: msg.Content,
+		// 	From:    msg.From,
+		// 	RoomID: msg.ID,
+		// }
+
+		msgID, err := c.SaveMessage(&msg)
+		if err != nil {
+			slog.Error(err.Error())
+			return
+		}
+
+		if err := c.SaveLasgRoomMsg(c.RoomID, &msg); err != nil {
+			slog.Error(err.Error())
+			return
+		}
+		slog.Debug("client.WriteMessage, msg successful saved into database", "msg_id", msgID)
+
 		c.Conn.WriteJSON(msg)
 
 		slog.Info("client.WriteMessage, successful written the msg", "msg", msg)
@@ -187,20 +209,69 @@ func (c *Client) ReadMessage(ch *ChatHub) {
 			break
 		}
 
+		smsg := SMessage{}
+		if err := json.Unmarshal(msg, &smsg); err != nil {
+			slog.Error(err.Error())
+			break
+		}
+
 		// 3. create a new instance of thh message, and assign data
 		message := Message{
 			ID:          GetUUID(),
 			From:        c.Username,
 			RoomID:      c.RoomID,
-			Content:     string(msg),
+			Content:     smsg.Content,
 			CreatedAt:   time.Now(),
 			IsDelivered: true,
 		}
 
 		// 4. after broadcast this message to other users
-		fmt.Println("client.ReadMessage, send msg to broadcast channel") // TODO: remove this fmt log
 		ch.Broadcast <- message
 	}
 
 	slog.Debug("client.ReadMessage, the ws connection was closed")
+}
+
+// SaveMessage
+func (c *Client) SaveMessage(msg *Message) (msgID string, err error) {
+	if msg == nil {
+		return "", errors.New("error, invalid message, msg is nil")
+	}
+
+	mID := ""
+	if err := c.DB.SQLite.QueryRow("SELECT id FROM messages WHERE id=?", msg.ID).Scan(&mID); err != nil {
+		if err != sql.ErrNoRows {
+			return "", err
+		}
+	}
+
+	if mID == msg.ID {
+		return mID, nil
+	}
+
+	_, err = c.DB.SQLite.Exec("INSERT INTO messages(id, username, room_id, content, created_at, is_delivered, is_read) VALUES (?, ?, ?, ?, ?, ?, ?)",
+		msg.ID, msg.From, msg.RoomID, msg.Content, msg.CreatedAt, msg.IsDelivered, msg.IsRead)
+	if err != nil {
+		return "", err
+	}
+
+	return msg.ID, nil
+}
+
+// SaveLastRoomMsg
+func (c *Client) SaveLasgRoomMsg(roomID string, msg *Message) error {
+	if roomID == "" || msg == nil {
+		return errors.New("error, invalid args or nil struct pointer")
+	}
+
+	mdata, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+
+	if _, err := c.DB.SQLite.Exec("UPDATE rooms SET last_msg=? WHERE id=?", string(mdata), roomID); err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -9,43 +9,159 @@
     <link rel="icon" type="image/png" href="../static/favicon/favicon32.png">
     <link rel="icon" type="image/png" href="../static/favicon/favicon96.png">
     <title>Real Time Forum</title>
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            width: 300px;
+            text-align: center;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .modal button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .modal button:hover {
+            background-color: #218838;
+        }
+
+        .close-btn {
+            color: red;
+            cursor: pointer;
+        }
+
+        /* Стили для пользователей */
+        .user-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+
+        .online-user {
+            background-color: #1f461f; 
+        }
+
+        .offline-user {
+            background-color: #4a2121; 
+        }
+
+        .user-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .user-status.online {
+            background-color: green;
+        }
+
+        .user-status.offline {
+            background-color: red;
+        }
+
+        .create-chat {
+            cursor: pointer;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            padding: 5px 10px;
+            margin-left: 10px;
+            border-radius: 4px;
+        }
+
+        .create-chat:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
 <div class="container">
-     <!-- Header -->
-      <header class="header">
-            <!-- Левая часть: Логотип -->
-            <div class="logo">
-                <a href="/">
-                    <img src="../static/img/logo.png" alt="Logo" class="logo-image">
-                </a>
-            </div>
-            <!-- Правая часть: Меню пользователя -->
-            <div class="user-menu">
-                <!-- Профиль пользователя -->
-                <div class="profile">
-                    <div class="profile-container" onclick="toggleDropdown()">
-                        <div class="profile-icon">
-                            <img src="../static/img/profile.png" alt="User Avatar">
-                        </div>
-                        <span class="user-name">{{.Username}}</span>
+    <!-- Header -->
+    <header class="header">
+        <!-- Левая часть: Логотип -->
+        <div class="logo">
+            <a href="/">
+                <img src="../static/img/logo.png" alt="Logo" class="logo-image">
+            </a>
+        </div>
+        <!-- Правая часть: Меню пользователя -->
+        <div class="user-menu">
+            <!-- Профиль пользователя -->
+            <div class="profile">
+                <div class="profile-container" onclick="toggleDropdown()">
+                    <div class="profile-icon">
+                        <img src="../static/img/profile.png" alt="User Avatar">
                     </div>
-                    <!-- Выпадающее меню -->
-                    <div class="dropdown-menu" id="dropdown-menu">
-                        <button class="dropdown-item" onclick="window.location.href='https://www.youtube.com/watch?v=obmlZH3X9gs'">Secret Button</button>
-                        <button class="dropdown-item" onclick="window.location.href='/sign-out'">Sign Out</button>
-                    </div>
+                    <span class="user-name">{{.Username}}</span>
+                </div>
+                <!-- Выпадающее меню -->
+                <div class="dropdown-menu" id="dropdown-menu">
+                    <button class="dropdown-item" onclick="window.location.href='https://www.youtube.com/watch?v=obmlZH3X9gs'">Secret Button</button>
+                    <button class="dropdown-item" onclick="window.location.href='/sign-out'">Sign Out</button>
                 </div>
             </div>
-        </header>
-     <!-- Content -->
+        </div>
+    </header>
     <!-- Content -->
     <div class="chat-container">
+        <div class="user-list">
+            <h2>Users</h2>
+            {{ range .Users }}
+            {{ if .IsOnline }}
+            <div class="user-item online-user">
+                <span class="user-status online"></span>
+                <span class="user-name"><b>{{ .Login }}</b>  </span>
+                <button class="create-chat" onclick="openCreateChatModal('{{ .Login }}')"><b>Start Chat</b></button>
+            </div>
+            {{ end }}
+            {{ end }}
+            {{ range .Users }}
+            {{ if not .IsOnline }}
+            <div class="user-item offline-user">
+                <span class="user-status offline"></span>
+                <span class="user-name"><b>{{ .Login }}</b></span>
+                <button class="create-chat" onclick="openCreateChatModal('{{ .Login }}')"><b>Start Chat</b></button>
+            </div>
+            {{ end }}
+            {{ end }}
+        </div>
+
         <!-- Левая колонка: список чатов -->
         <div class="chat-list">
             <!-- Здесь динамически генерируется список чатов -->
-            {{ range .CurrentRooms }}
-            <div class="chat-item">
+            {{ range .CurrentRoomClients }}
+            <div class="chat-item" onclick="joinChat('{{ .ID }}', '{{ .Name }}')">
                 <div class="chat-avatar">
                     <img src="/static/img/profile.png" alt="User Avatar">
                 </div>
@@ -61,26 +177,23 @@
         <div class="chat-content" id="chat-messages">
             <div class="messages">
                 <!-- Здесь отображаются сообщения -->
-                {{ range .Messages }}
-                <div class="message {{ if eq .From $.Username }}outgoing{{ else }}incoming{{ end }}">
-                    {{ if ne .From $.Username }}
-                    <div class="message-avatar">
-                        <img src="/static/img/profile.png" alt="User Avatar">
-                    </div>
-                    {{ end }}
-                    <div class="message-text">
-                        <p>{{ .Content }}</p>
-                        <span class="message-time">{{ .CreatedAt }}</span>
-                    </div>
-                </div>
-                {{ end }}
             </div>
             <!-- Поле ввода сообщения -->
             <div class="message-input">
-                <input type="text" placeholder="Введите сообщение..." id="message-input">
-                <button id="send-button">Отправить</button>
+                <input type="text" placeholder="Enter your message..." id="message-input">
+                <button id="send-button" style="display: none;">Send</button>
             </div>
         </div>
+    </div>
+</div>
+
+<div id="create-chat-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()"><b>Cancel</b></span>
+        <h2>Create a new Chat</h2>
+        <input type="text" id="chat-name" placeholder="Chat Name">
+        <input type="text" id="chat-username" readonly>
+        <button onclick="createChat()"><b>Create Chat</b></button>
     </div>
 </div>
 
@@ -100,35 +213,92 @@
         }
     }
 
-    // Chat logic scripts
-    const socket = new WebSocket("ws://localhost:8081/ws/join-room?room_id={{ .CurrentRoomID }}&username={{ .Username }}");
-
-    // DOM Elements
-    const messageInput = document.getElementById('message-input');
-    const chatMessages = document.querySelector('.messages');
-    const sendButton = document.getElementById('send-button');
-
-    // Socket event handlers
-    socket.onmessage = function(event) {
-        const data = JSON.parse(event.data);
-        displayMessage(data.content, data.from === "{{ .Username }}" ? "outgoing" : "incoming", data.from, data.createdAt);
-    };
-
-    sendButton.addEventListener('click', function() {
-        const message = messageInput.value;
-        if (message.trim() !== "") {
-            const msgData = { content: message, from: "{{ .Username }}", roomID: "{{ .CurrentRoomID }}" };
-            socket.send(JSON.stringify(msgData));
-            displayMessage(message, "outgoing", "{{ .Username }}", new Date().toLocaleTimeString());
-            messageInput.value = '';
+    function openCreateChatModal(username) {
+    const chatUsernameInput = document.getElementById('chat-username');
+        if (chatUsernameInput) {
+            chatUsernameInput.value = username;  
+            document.getElementById('create-chat-modal').style.display = 'flex';
+        } else {
+            console.error('Element with id "chat-username" not found.');
         }
-    });
+    }
 
-    messageInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            sendButton.click();
+
+    function OopenCreateChatModal(username) {
+        document.getElementById('chat-username').value = username;
+        document.getElementById('create-chat-modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('create-chat-modal').style.display = 'none';
+    }
+
+    function createChat() {
+        const chatName = document.getElementById('chat-name').value;
+        const username = document.getElementById('chat-username').value;
+        if (chatName.trim() !== "" && username.trim() !== "") {
+            const createChatSocket = new WebSocket(`ws://localhost:8081/ws/create-pvchat?room=${chatName}&invited_username=${username}`);
+
+            createChatSocket.onopen = function() {
+                console.log("WebSocket connection for creating chat opened.");
+                createChatSocket.send(JSON.stringify({ room: chatName, username: username }));
+            };
+
+            createChatSocket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.success) {
+                    const chatList = document.querySelector('.chat-list');
+                    const newChat = document.createElement('div');
+                    newChat.classList.add('chat-item');
+                    newChat.innerHTML = `
+                        <div class="chat-avatar">
+                            <img src="/static/img/profile.png" alt="User Avatar">
+                        </div>
+                        <div class="chat-info">
+                            <span class="chat-name">${chatName}</span>
+                            <span class="chat-last-message">New chat started</span>
+                        </div>
+                    `;
+                    newChat.onclick = function() {
+                        joinChat(data.roomID, chatName); 
+                    };
+                    chatList.appendChild(newChat);
+                    closeModal(); 
+                }
+            };
+
+            createChatSocket.onerror = function(error) {
+                console.error("WebSocket error: ", error);
+            };
         }
-    });
+    }
+
+    let currentSocket = null; 
+
+    function joinChat(roomID, chatName) {
+        if (currentSocket) {
+            currentSocket.close(); 
+        }
+
+        currentSocket = new WebSocket(`ws://localhost:8081/ws/join-pvchat?room_id=${roomID}&username={{ .Username }}`);
+
+        currentSocket.onopen = function() {
+            console.log(`Joined chat room: ${chatName}`);
+            document.querySelector('.messages').innerHTML = ''; 
+            document.getElementById('send-button').style.display = 'block'; 
+        };
+
+        currentSocket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            if (data.roomID === roomID) {
+                displayMessage(data.content, data.from === "{{ .Username }}" ? "outgoing" : "incoming", data.from, data.createdAt);
+            }
+        };
+
+        currentSocket.onerror = function(error) {
+            console.error("WebSocket error: ", error);
+        };
+    }
 
     function displayMessage(message, type, from, time) {
         const messageDiv = document.createElement('div');
@@ -155,9 +325,19 @@
         messageTextDiv.appendChild(messageTime);
         messageDiv.appendChild(messageTextDiv);
 
-        chatMessages.appendChild(messageDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        document.querySelector('.messages').appendChild(messageDiv);
+        document.querySelector('.messages').scrollTop = document.querySelector('.messages').scrollHeight;
     }
+
+    document.getElementById('send-button').addEventListener('click', function() {
+        const message = document.getElementById('message-input').value;
+        if (message.trim() !== "" && currentSocket) {
+            const msgData = { content: message, from: "{{ .Username }}", roomID: "{{ .CurrentRoomID }}" };
+            currentSocket.send(JSON.stringify(msgData));
+            // displayMessage(message, "outgoing", "{{ .Username }}", new Date().toLocaleTimeString());
+            document.getElementById('message-input').value = '';
+        }
+    });
 </script>
 </body>
 </html>

@@ -36,28 +36,33 @@ func NewWSChatController(db *sqlite.Database, ch *wschat.ChatHub) *WsChatControl
 
 // ChatData
 type ChatData struct {
-	ClientsList        []model.User     // all online and offline users
+	Users              []*model.User    // all online and offline users
 	Messages           []wschat.Message // all messages by the current room
 	CurrentRoomClients []wschat.SRoom   // all the current client rooms
 	Username           string
+	CurrentRoomID      string
 }
 
+var OnlineUsers = []*model.User{}
+
 // getClinets
-func (ws *WsChatController) getClients(chat *wschat.ChatHub, dbClients []model.User) (cls []model.User, err error) {
+func (ws *WsChatController) getClients(chat *wschat.ChatHub, dbClients []*model.User, username string) ([]*model.User, error) {
 	if chat == nil || dbClients == nil {
 		return nil, errors.New("error, nil struct pointer")
 	}
 
-	for _, wcl := range chat.Clients {
-		for _, dcl := range dbClients {
+	for i, dcl := range dbClients {
+		if dcl.Login == username {
+			dcl.IsOnline = true
+		}
+		for _, wcl := range chat.Clients {
 			if wcl.Username == dcl.Login {
-				dcl.IsOnline = true
+				dbClients[i].IsOnline = true
 			}
-			cls = append(cls, dcl)
 		}
 	}
 
-	return cls, nil
+	return dbClients, nil
 }
 
 func (ws *WsChatController) getChatData(w http.ResponseWriter, r *http.Request) (ChatData, error) {
@@ -81,12 +86,6 @@ func (ws *WsChatController) getChatData(w http.ResponseWriter, r *http.Request) 
 	}
 	chatData.Username = user.Login
 
-	// TODO:  depricated,  remove this code
-	// client, err := ws.ChatRepo.GetClientByUsername(user.Login)
-	// if err != nil {
-	// 	return chatData, err
-	// }
-
 	rooms, err := ws.ChatRepo.GetAllRoomsByClientID(user.Id)
 	if err != nil {
 		slog.Error(err.Error())
@@ -95,30 +94,20 @@ func (ws *WsChatController) getChatData(w http.ResponseWriter, r *http.Request) 
 	}
 	chatData.CurrentRoomClients = rooms
 
-	// TODO: depricated, remove this code
-	// clients, err := ws.ChatRepo.GetAllClients()
-	// if err != nil {
-	// 	slog.Error(err.Error())
-	// 	ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
-	// 	return chatData, err
-	// }
-
-	users, err := ws.ARepo.GetAllUsers()
+	ChUsers, err := ws.ARepo.GetAllUsers()
 	if err != nil {
 		slog.Error(err.Error())
 		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return chatData, err
 	}
 
-	// TODO: implement last message saving for room.last_message
-
-	cls, err := ws.getClients(ws.Hub, users)
+	cls, err := ws.getClients(ws.Hub, ChUsers, user.Login)
 	if err != nil {
 		slog.Error(err.Error())
 		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return chatData, err
 	}
-	chatData.ClientsList = cls
+	chatData.Users = cls
 
 	return chatData, nil
 }
@@ -139,7 +128,6 @@ func (ws *Controller) ChatPage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// TODO: Group Chats
 // CreateRoom | CreateGroupChat
 func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 
@@ -171,14 +159,15 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	inviteUsername := r.URL.Query().Get("invited_username")
 	// params
 
-	// uID, err := ws.ARepo.GetUserIDFromSession(w, r)
-	// if err != nil {
-	// 	slog.Error(err.Error())
-	// 	http.Redirect(w, r, "/sign-in", http.StatusSeeOther)
-	// 	return
-	// }
+	fmt.Printf("\nRequest for create a new room, room: %s, invited_username: %s\n", room, inviteUsername)
 
-	uID := 2 // TODO: remove this
+	uID, err := ws.ARepo.GetUserIDFromSession(w, r)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Redirect(w, r, "/sign-in", http.StatusSeeOther)
+		return
+	}
+
 	user, err := ws.ARepo.GetUserByUserID(uID)
 	if err != nil {
 		slog.Error(err.Error())
@@ -208,6 +197,7 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		RoomID:   komnata.ID,
 		Conn:     conn,
 		Message:  make(chan wschat.Message, 10),
+		DB:       ws.ChatRepo.DB,
 	}
 
 	Boba := wschat.Client{
@@ -216,6 +206,7 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		RoomID:   komnata.ID,
 		Conn:     conn, // TODO: maybe a bug
 		Message:  make(chan wschat.Message, 10),
+		DB:       ws.ChatRepo.DB,
 	}
 
 	// add this room into rooms of the chat hub
@@ -227,21 +218,6 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		Name: komnata.Name,
 	}
 
-	// TODO: depricated, remove this code
-	// biba := wschat.SClient{
-	// 	ID:       bibaID,
-	// 	Username: Biba.Username,
-	// 	RoomID:   []string{komnata.ID},
-	// }
-	// aroom.Clients[bibaID] = biba
-
-	// boba := wschat.SClient{
-	// 	ID:       bobaID,
-	// 	Username: Boba.Username,
-	// 	RoomID:   []string{komnata.ID},
-	// }
-	// aroom.Clients[bobaID] = boba
-
 	gMsg := wschat.Message{
 		ID:      wschat.GetUUID(),
 		From:    Biba.Username,
@@ -249,8 +225,8 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		Content: fmt.Sprintf("the %s created the %s chat, and add the %s\n", Biba.Username, aroom.Name, Boba.Username),
 	}
 	aroom.ClientCretorID = user.Id
-	aroom.ClientCretorID = inUser.Id
-	aroom.LastMessage = &gMsg // TODO: meybe bug
+	aroom.ClientInvitedID = inUser.Id
+	aroom.LastMessage = &gMsg
 
 	msgID, err := ws.ChatRepo.SaveMessage(&gMsg)
 	if err != nil {
@@ -271,16 +247,22 @@ func (ws *WsChatController) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	}
 	slog.Info("the room successful saved into database", "room_id", roomID)
 
-	// TODO: depricated, reomve this code
-	// clIDs, err := ws.ChatRepo.SaveClients(&biba, &boba)
-	// if err != nil {
-	// 	slog.Error(err.Error())
-	// 	ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
-	// 	return
-	// }
-	// slog.Info("clients successful saved into dabase", "clients_ids", strings.Join(clIDs, ", "))
+	// information message for fron-end
+	res := struct {
+		Success  bool   `json:"success"`
+		Room     string `json:"room"`
+		RoomID   string `json:"roomID"`
+		Username string `json:"username"`
+		Message  string `json:"message"`
+	}{
+		Success:  true,
+		Room:     aroom.Name,
+		RoomID:   aroom.ID,
+		Username: inUser.Login,
+		Message:  gMsg.Content,
+	}
 
-	if err := conn.WriteJSON(aroom); err != nil {
+	if err := conn.WriteJSON(res); err != nil {
 		slog.Error(err.Error())
 		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return
@@ -336,41 +318,38 @@ func (c *WsChatController) JoinRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if droom.ID != roomID  {
+	if droom.ID != roomID {
 		slog.Error(errors.New("error, wrong room id").Error())
 		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return
 	}
 
-	// TODO: set session coockie
+	userID, err := c.ARepo.GetUserIDFromSession(w, r)
+	if err != nil {
+		slog.Error(err.Error())
+		ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+		return
+	}
 
-	// TODO: fix this
-	// userID, err := c.ARepo.GetUserIDFromSession(w, r)
-	// if err != nil {
-	// 	slog.Error(err.Error())
-	// 	ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
-	// 	return
-	// }
+	user, err := c.ARepo.GetUserByUserID(userID)
+	if err != nil {
+		slog.Error(err.Error())
+		ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+		return
+	}
 
-	// user, err := c.ARepo.GetUserByUsername(username)
-	// if err != nil {
-	// 	slog.Error(err.Error())
-	// 	ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
-	// 	return
-	// }
-
-	// // TODO: ref:
-	// if username != username {
-	// 	slog.Error(errors.New("error, wrong user in chat").Error())
-	// 	ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
-	// 	return
-	// }
+	if username != user.Login {
+		slog.Error(errors.New("error, wrong user in chat").Error())
+		ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+		return
+	}
 
 	//4. if invited user not exists in database and chat service pool, register this user in chat pool
 	// and save this user into database
 	Client := wschat.Client{
 		Conn:    conn,
 		Message: make(chan wschat.Message, 10),
+		DB:      c.ChatRepo.DB,
 	}
 
 	dclient, err := c.ARepo.GetUserByUsername(username)
@@ -385,38 +364,11 @@ func (c *WsChatController) JoinRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if droom.ClientInvitedID != dclient.Id {
+	if droom.ClientInvitedID != dclient.Id && droom.ClientCretorID != dclient.Id {
 		slog.Error(errors.New("error, uninvited client try to join the chat").Error())
 		ErrorController(w, http.StatusMethodNotAllowed, "Access denied! Its not your chat!")
 		return
 	}
-
-	// TODO: depricated, remove this code
-	// dclient, err := c.ChatRepo.GetClientByUsername(username)
-	// if err != nil {
-	// 	if err == sql.ErrNoRows {
-	// 		cl := wschat.SClient{
-	// 			ID:       wschat.GetUUID(),
-	// 			Username: username,
-	// 			RoomID:   roomID,
-	// 		}
-
-	// 		Client.ID = cl.ID
-	// 		Client.Username = cl.Username
-	// 		Client.RoomID = cl.RoomID
-
-	// 		id, err := c.ChatRepo.SaveClients(&cl)
-	// 		if err != nil {
-	// 			slog.Error(errors.New("error, wrong user in chat").Error(), "err", err.Error())
-	// 			ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
-	// 			return
-	// 		}
-	// 		slog.Info("a new joining the chat client successful saved into db", "client_id", strings.Join(id, ", "))
-	// 	}
-	// 	slog.Error(err.Error())
-	// 	ErrorController(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
-	// 	return
-	// }
 	slog.Info("the client joining the chat", "username", dclient.Login)
 
 	if dclient.Login != "" {
@@ -434,25 +386,39 @@ func (c *WsChatController) JoinRoom(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: time.Now(),
 	}
 
-	_, err = c.ChatRepo.SaveMessage(&gMsg)
-	if err != nil {
-		slog.Error(err.Error())
-		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
-		return
-	}
-
 	if err := c.ChatRepo.SaveLasgRoomMsg(droom.ID, &gMsg); err != nil {
 		slog.Error(err.Error())
 		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return
 	}
 
+	// TODO: load all old this room messages by room_id
+	messages, err := c.ChatRepo.GetAllMessagesByRoomID(droom.ID)
+	if err != nil {
+		slog.Error(err.Error())
+		ErrorController(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return
+	}
+
+	if len(messages) > 0 {
+		for _, msg := range messages {
+			Client.Conn.WriteJSON(msg)
+		}
+	}
+
 	//9. send to front-end ws info about this operations
-	Client.Conn.WriteJSON(gMsg)
+	// Client.Conn.WriteJSON(gMsg)
 
 	//6. broadcast this message in this room
 	// TODO: test again Hub.Broadcast, and Register, with Unregister channels
-	c.Hub.Broadcast <- gMsg
+	room := wschat.Room{
+		ID:      droom.ID,
+		Name:    droom.Name,
+		Clients: make(map[int]*wschat.Client),
+	}
+	room.Clients[Client.ID] = &Client
+	c.Hub.Rooms[droom.ID] = &room
+	// c.Hub.Broadcast <- gMsg
 	c.Hub.Register <- &Client
 
 	//7. add ws connection, client.conn

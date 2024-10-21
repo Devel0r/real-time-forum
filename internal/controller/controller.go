@@ -159,7 +159,7 @@ func GetTmpPath(tmpName string) (tmpPath string) {
 	case "index":
 		tmpPath = GetWd() + "/internal/view/template/index.html"
 	case "wschat":
-		tmpPath = GetWd() + "/internal/view/template/chat_v2.html"
+		tmpPath = GetWd() + "/internal/view/template/chat.html"
 	default:
 		tmpPath = GetWd() + "/internal/view/template/index.html"
 	}

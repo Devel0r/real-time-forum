@@ -212,13 +212,13 @@ func (a *AuthRepository) GetUserByUserID(userID int) (*model.User, error) {
 }
 
 // GetAllUsers
-func (a *AuthRepository) GetAllUsers() ([]model.User, error) {
+func (a *AuthRepository) GetAllUsers() ([]*model.User, error) {
 	urows, err := a.DB.SQLite.Query("SELECT id, login, age, gender, name, surname, email, password_hash, rooms_id FROM users")
 	if err != nil {
 		return nil, err
 	}
 
-	users := []model.User{}
+	users := []*model.User{}
 	for urows.Next() {
 		user := model.User{}
 		rooms := ""
@@ -231,7 +231,7 @@ func (a *AuthRepository) GetAllUsers() ([]model.User, error) {
 			return nil, err
 		}
 
-		users = append(users, user)
+		users = append(users, &user)
 	}
 
 	return users, nil
